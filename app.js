@@ -2,13 +2,19 @@ let express = require('express');
 let app = express();
 let serv = require('http').Server(app);
 
-app.get('/', function(req, res) {
-    res.sendFile(__dirname + '/client/index.html');
-});
-app.use('/client',express.static(__dirname + '/client'));
+app.use(express.static('client'));
 
 serv.listen(4444);
 printLanAddress();
+
+let io = require('socket.io')(serv,{});
+io.sockets.on('connection', function(socket) {
+  console.log('socket connection');
+
+  socket.on('happy', function(data){
+    console.log('happy message received: ' + data.reason);
+  });
+});
 
 function printLanAddress() //https://stackoverflow.com/questions/3653065/get-local-ip-address-in-node-js
 {
