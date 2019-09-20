@@ -1,10 +1,12 @@
+const port = 4444;
+
 class Player
 {
 	constructor(id)
 	{
 		this.id = id;
-		this.x = 0;
-		this.y = 0;
+		this.x = 250;
+		this.y = 250;
 
 		this.iUp = false;
 		this.iDown = false;
@@ -40,7 +42,7 @@ let serv = require('http').Server(app);
 
 app.use(express.static('client'));
 
-serv.listen(4444);
+serv.listen(port);
 printLanAddress();
 
 let socketList = {}; //dictionary
@@ -69,6 +71,10 @@ io.sockets.on('connection', function (socket) {
 		player.iDown = data.iDown;
 		player.iRight = data.iRight;
 		player.iLeft = data.iLeft;
+	});
+
+	socket.on('chat', function(data){
+		console.log(socket.id + ": " + data);
 	});
 });
 
@@ -109,7 +115,7 @@ function printLanAddress() //https://stackoverflow.com/questions/3653065/get-loc
 				return;
 			}
 
-			console.log("Running Lan Server over: " + ifname + " " + iface.address);
+			console.log("Running Lan Server over: " + ifname + " | " + iface.address + " | " + port);
 		});
 	});
 	console.log();//blank space

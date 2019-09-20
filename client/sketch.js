@@ -1,10 +1,17 @@
 let socket;
+let textInputField;
+
+let resetFields = false;
 
 function setup()
 {
     frameRate(60);
     createCanvas(windowWidth, windowHeight);
     background(190);
+
+    textInputField = createElement('textarea', '');
+    textInputField.attribute('placeholder', 'Chat here...');
+    textInputField.position(0, windowHeight - (80 + 16));
 
     textAlign(CENTER, CENTER)
     textSize(18);
@@ -27,6 +34,11 @@ function setup()
 
 function draw()
 {
+    if (resetFields)
+    {
+        textInputField.value('');
+        resetFields = false;
+    }
     sendInput();
 }
 
@@ -57,4 +69,15 @@ function sendInput()
     }
     
     socket.emit('input', inputs);
+}
+
+function keyPressed()
+{
+    if (keyCode == 13 && !keyIsDown(16) && textInputField.value() != '') // not shift and enter
+    {
+        textInputField.value(textInputField.value().replace(/^\s+|\s+$/g, '')); //remove ends
+        textInputField.value(textInputField.value().replace(/\n\s*\n/g, '\n')); //remove duplicates
+        socket.emit('chat', textInputField.value());
+        resetFields = true;
+    }
 }
