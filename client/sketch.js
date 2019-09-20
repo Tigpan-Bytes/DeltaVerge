@@ -1,5 +1,6 @@
 let socket;
 let textInputField;
+let chatBox;
 
 let resetFields = false;
 
@@ -12,6 +13,9 @@ function setup()
     textInputField = createElement('textarea', '');
     textInputField.attribute('placeholder', 'Chat here...');
     textInputField.position(0, windowHeight - (80 + 16));
+
+    chatBox = createElement('chatbox', 'Welcome to the chat room! Type, then press enter to chat.');
+    chatBox.position(0, windowHeight - (80 + 16) - (270 + 16));
 
     textAlign(CENTER, CENTER)
     textSize(18);
@@ -29,6 +33,10 @@ function setup()
             noStroke();
             text(data[i].id.toString(), data[i].x, data[i].y);
         }
+    });
+
+    socket.on('newChatMessage', function(data){
+        chatBox.html(data, true);
     });
 }
 
@@ -75,7 +83,7 @@ function keyPressed()
 {
     if (keyCode == 13 && !keyIsDown(16) && textInputField.value() != '') // not shift and enter
     {
-        textInputField.value(textInputField.value().replace(/^\s+|\s+$/g, '')); //remove ends
+        textInputField.value(textInputField.value().replace(/^\s+|\s+$/g, '')); //remove start and end
         textInputField.value(textInputField.value().replace(/\n\s*\n/g, '\n')); //remove duplicates
         socket.emit('chat', textInputField.value());
         resetFields = true;

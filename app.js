@@ -1,12 +1,12 @@
 const port = 4444;
 
-class Player
+class Chatter
 {
 	constructor(id)
 	{
 		this.id = id;
 		this.x = 250;
-		this.y = 250;
+		this.y = 50;
 
 		this.iUp = false;
 		this.iDown = false;
@@ -46,7 +46,7 @@ serv.listen(port);
 printLanAddress();
 
 let socketList = {}; //dictionary
-let playerList = {}; //dictionary
+let chatterList = {}; //dictionary
 let idIncrement = 0;
 
 let io = require('socket.io')(serv, {});
@@ -54,40 +54,47 @@ io.sockets.on('connection', function (socket) {
 	socket.id = idIncrement++;
 	socketList[socket.id] = socket;
 
-	playerList[socket.id] = new Player(socket.id);
+	chatterList[socket.id] = new Chatter(socket.id);
 
 	console.log('Client Connected: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress);
 
 	socket.on('disconnect', function(){
 		console.log('Client Disconnected: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress);
 		delete socketList[socket.id];
-		delete playerList[socket.id];
+		delete chatterList[socket.id];
 	});
 
 	socket.on('input', function(data){
-		let player = playerList[socket.id];
+		let chatter = chatterList[socket.id];
 
-		player.iUp = data.iUp;
-		player.iDown = data.iDown;
-		player.iRight = data.iRight;
-		player.iLeft = data.iLeft;
+		chatter.iUp = data.iUp;
+		chatter.iDown = data.iDown;
+		chatter.iRight = data.iRight;
+		chatter.iLeft = data.iLeft;
 	});
 
 	socket.on('chat', function(data){
 		console.log(socket.id + ": " + data);
+		let pack = '\n' + socket.id + ": " + data;
+
+		for (let i in socketList) 
+		{
+			let socket = socketList[i];
+			socket.emit('newChatMessage', pack);
+		}
 	});
 });
 
 setInterval(function () { //update/draw function
 	let pack = [];
-	for (let i in playerList) 
+	for (let i in chatterList) 
 	{
-		let player = playerList[i];
-		player.update();
+		let chatter = chatterList[i];
+		chatter.update();
 		pack.push({
-			x: player.x,
-			y: player.y,
-			id: player.id,
+			x: chatter.x,
+			y: chatter.y,
+			id: chatter.id,
 		});
 	}
 	for (let i in socketList) 
