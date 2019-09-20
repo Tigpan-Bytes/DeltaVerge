@@ -10,7 +10,27 @@ body, html {
     display: none;
 }
 
+.name {
+    color: #000;
+}
+
+.otherText {
+    color: #333;
+}
+
+.yourText {
+    color: #000;
+}
+
+welcome {
+    font-size: 32px;
+    color: #222;
+    margin: 8px;
+    text-align: left;
+}
+
 textarea {
+    font-size: 16px;
     width: calc(100% - 16px);
     height: 80px;
     margin: 8px;
@@ -23,8 +43,9 @@ textarea {
 }
 
 chatbox {
+    font-size: 18px;
     width: calc(100% - 16px);
-    height:calc(100% - 80px - 32px - 48px);
+    height: calc(100% - 80px - 32px - 48px);
     text-align:left;
     margin:8px;
     padding:12px;

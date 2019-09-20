@@ -32,22 +32,60 @@ io.sockets.on('connection', function (socket) {
 
 	chatterList[socket.id] = new Chatter(socket.id);
 
-	console.log('Client Connected: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress);
+	console.log('Client Connected: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Time: " + getSuperTime(new Date()));
 
 	socket.on('init', function(data){
-		console.log('Client Initilized: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Username: " + data);
+		console.log('Client Initilized: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Username: " + data+ " | Time: " + getSuperTime(new Date()));
 		chatterList[socket.id].name = data;
+		
+		let date = new Date();
+		let pack = {
+			spanner: '<span style="color: #080;">',
+			time: getTime(date),
+			timeStamp: date.getTime(),
+			username: chatterList[socket.id].name,
+			message: " has Connected!",
+		};
+	
+		for (let i in socketList) 
+		{
+			let socket = socketList[i];
+			socket.emit('newChatAnnouncement', pack);
+		}
 	});
 
 	socket.on('disconnect', function(){
-		console.log('Client Disconnected: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress);
+		console.log('Client Disconnected: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Time: " + getSuperTime(new Date()));
+
+		let date = new Date();
+		let pack = {
+			spanner: '<span style="color: #800;">',
+			time: getTime(date),
+			timeStamp: date.getTime(),
+			username: chatterList[socket.id].name,
+			message: " has Disconnected.",
+		};
+
+		for (let i in socketList) 
+		{
+			let socket = socketList[i];
+			socket.emit('newChatAnnouncement', pack);
+		}
+		
 		delete socketList[socket.id];
 		delete chatterList[socket.id];
 	});
 
 	socket.on('chat', function(data){
-		console.log(socket.id + ": " + data);
-		let pack = '\n' + chatterList[socket.id].name + ": " + data;
+		let date = new Date();
+		let pack = {
+			time: getTime(date),
+			timeStamp: date.getTime(),
+			username: chatterList[socket.id].name,
+			message: data,
+		};
+
+		console.log(pack.time + " - " + pack.username + ": " + pack.message);
 
 		for (let i in socketList) 
 		{
@@ -56,6 +94,72 @@ io.sockets.on('connection', function (socket) {
 		}
 	});
 });
+
+function getMonth(date)
+{
+	let month = date.getMonth(); //jan is 0
+	switch (month)
+	{
+		case 0:
+			return "Jan";
+		case 1:
+			return "Feb";
+		case 2:
+			return "Mar";
+		case 3:
+			return "Apr";
+		case 4:
+			return "May";
+		case 5:
+			return "Jun";
+		case 6:
+			return "Jul";
+		case 7:
+			return "Aug";
+		case 8:
+			return "Sep";
+		case 9:
+			return "Oct";
+		case 10:
+			return "Nov";
+		default:
+			return "Dec";
+	}
+}
+
+function addTwoDigitZero(numbers)
+{
+	if (numbers.length <= 1)
+	{
+		return "0" + numbers;
+	}
+	return numbers;
+}
+
+function getSuperTime(date)
+{
+	let month = getMonth(date);
+	let day = date.getDate();
+	let hrs = date.getHours();
+	let mins = addTwoDigitZero(date.getMinutes().toString());
+	let secs = addTwoDigitZero(date.getSeconds().toString());
+	if (hrs >= 13)
+	{
+		return month + ":" + day + " - " + (hrs - 12) + ":" + mins + ":" + secs + " PM";
+	}
+	return month + ":" + day + " - " + hrs + ":" + mins + ":" + secs + " AM";
+}
+
+function getTime(date)
+{
+	let hrs = date.getHours();
+	let mins = addTwoDigitZero(date.getMinutes().toString());
+	if (hrs >= 13)
+	{
+		return (hrs - 12) + ":" + mins + " PM";
+	}
+	return hrs + ":" + mins + " AM";
+}
 
 /*
 setInterval(function () { //update/draw function

@@ -1,39 +1,104 @@
 let socket;
 let textInputField;
 let chatBox;
+let chatBoxHeight;
 let welcomeText;
+let username;
 
 let resetFields = false;
+let lastMessageTimeStamp = null;
+let lastPrintedMessageTimeStamp = null;
+let threeMinutes = 180000;
+let tenMinutes = 600000;
 
 function setup()
 {
+    username = "Testing " + floor(random(0, 100));
+
     textInputField = createElement('textarea', '');
     textInputField.attribute('placeholder', 'Chat here...');
-    textInputField.position(0, windowHeight - (80 + 16));
 
-    chatBox = createElement('chatbox', 'Welcome to the chat room! Type, then press enter to chat.');
-    chatBox.position(0, 48);
+    chatBox = createElement('chatbox', '<i>&nbsp;&nbsp;&nbsp;&nbsp;Welcome to the chat room! Type, then press enter to chat.</i>');
 
-    welcomeText = createElement('h1', 'Welcome, user, to Room A.');
-    welcomeText.position(0,0);
+    welcomeText = createElement('welcome', 'Welcome, <b>' + username + '</b>, to Room A.');
+
+    windowResized();
 
     socket = io();
 
-    socket.on('newChatMessage', function(data){ //270 for height - 4 for border
-        let isTop = (chatBox.elt.scrollTop + 266) == chatBox.elt.scrollHeight;
-        chatBox.html(data, true);
-        if (isTop)
-        {
-            chatBox.elt.scrollTop = chatBox.elt.scrollHeight - 266;
-        }
-    });
+    socket.on('newChatMessage', addChatMessage);
+    socket.on('newChatAnnouncement', addChatAnnouncement);
 
-    socket.emit('init', "Testing " + floor(random(0, 100)));
+    socket.emit('init', username);
 }
+
+function isScrolled()
+{
+    return (chatBox.elt.scrollTop + chatBoxHeight) == chatBox.elt.scrollHeight;
+}
+
+function fullScroll()
+{
+    chatBox.elt.scrollTop = chatBox.elt.scrollHeight - chatBoxHeight;
+}
+
+function addChatMessage(data)
+{ //270 for height - 4 for border
+    let isTop = isScrolled();
+
+    //Put message in chatbox
+    if (lastMessageTimeStamp == null || data.timeStamp > lastMessageTimeStamp + threeMinutes || data.timeStamp > lastPrintedMessageTimeStamp + tenMinutes)
+    {
+        lastMessageTimeStamp = data.timeStamp;
+        lastPrintedMessageTimeStamp = data.timeStamp;
+        chatBox.html("\n" + data.time + " - <b>" + getNameSpanner(data.username) + data.username + "</span></b>: " + getMessageSpanner(data.username) + data.message + "</span>", true);
+    }
+    else
+    {
+        lastMessageTimeStamp = data.timeStamp;
+        chatBox.html("\n&nbsp;&nbsp;&nbsp;&nbsp;<b>" + getNameSpanner(data.username) + data.username + "</span></b>: " + getMessageSpanner(data.username) + data.message + "</span>", true);
+    }
+
+    if (isTop)
+    {
+        fullScroll();
+    }
+}
+
+function getNameSpanner(un) // used for rank colours
+{
+    return '<span class="name">';
+}
+
+function getMessageSpanner(un) // used for rank colours
+{
+    if (un == username)
+    {
+        return '<span class="yourText">';
+    }
+    return '<span class="otherText">';
+}
+
+function addChatAnnouncement(data)
+{ //270 for height - 4 for border
+    //Put message in chatbox
+    let isTop = isScrolled();
+
+    lastMessageTimeStamp = data.timeStamp;
+    lastPrintedMessageTimeStamp = data.timeStamp;
+    chatBox.html("\n<i>" + data.spanner + data.time + " - " + data.username + data.message + "</i></span>", true);
+
+    if (isTop)
+    {
+        fullScroll();
+    }
+}
+
 
 function windowResized() {
     textInputField.position(0, windowHeight - (80 + 16));
     chatBox.position(0, 48);
+    chatBoxHeight = windowHeight - 80 - 32 - 48 - 8; // 8 for border
     welcomeText.position(0,0);
 }
 
