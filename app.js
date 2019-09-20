@@ -7,31 +7,7 @@ class Chatter
 		this.id = id;
 		this.x = 250;
 		this.y = 50;
-
-		this.iUp = false;
-		this.iDown = false;
-		this.iRight = false;
-		this.iLeft = false;
-	}
-
-	update()
-	{
-		if (this.iUp)
-		{
-			this.y -= 1;
-		}
-		if (this.iDown)
-		{
-			this.y += 1;
-		}
-		if (this.iRight)
-		{
-			this.x += 1;
-		}
-		if (this.iLeft)
-		{
-			this.x -= 1;
-		}
+		this.name = "null";
 	}
 }
 
@@ -58,24 +34,20 @@ io.sockets.on('connection', function (socket) {
 
 	console.log('Client Connected: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress);
 
+	socket.on('init', function(data){
+		console.log('Client Initilized: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Username: " + data);
+		chatterList[socket.id].name = data;
+	});
+
 	socket.on('disconnect', function(){
 		console.log('Client Disconnected: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress);
 		delete socketList[socket.id];
 		delete chatterList[socket.id];
 	});
 
-	socket.on('input', function(data){
-		let chatter = chatterList[socket.id];
-
-		chatter.iUp = data.iUp;
-		chatter.iDown = data.iDown;
-		chatter.iRight = data.iRight;
-		chatter.iLeft = data.iLeft;
-	});
-
 	socket.on('chat', function(data){
 		console.log(socket.id + ": " + data);
-		let pack = '\n' + socket.id + ": " + data;
+		let pack = '\n' + chatterList[socket.id].name + ": " + data;
 
 		for (let i in socketList) 
 		{
@@ -85,6 +57,7 @@ io.sockets.on('connection', function (socket) {
 	});
 });
 
+/*
 setInterval(function () { //update/draw function
 	let pack = [];
 	for (let i in chatterList) 
@@ -102,7 +75,7 @@ setInterval(function () { //update/draw function
 		let socket = socketList[i];
 		socket.emit('newPositions', pack);
 	}
-}, 1000 / 60);
+}, 1000 / 60); */
 
 
 //SUGAR SUGAR SUGAR SUGAR SUGAR SUGAR SUGAR SUGAR SUGAR
