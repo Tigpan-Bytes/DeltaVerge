@@ -1,13 +1,7 @@
 body, html {
     padding: 0;
     margin: 0;
-    height: 100%;
-    overflow: hidden;
     background-color: #bbbbbb;
-}
-
-::-webkit-scrollbar {
-    display: none;
 }
 
 .name {
@@ -22,11 +16,28 @@ body, html {
     color: #000;
 }
 
+button {
+    font-size: 18px;
+    background-color: rgb(76, 130, 175);
+    color: white;
+    padding: auto;
+    border: 2px solid rgb(34, 93, 116);
+    border-radius: 2px;
+    cursor: pointer;
+    text-align:center;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+button:hover {
+    opacity: 0.8;
+}
+
 welcome {
     font-size: 32px;
     color: #222;
     margin: 8px;
     text-align: left;
+    font-family: Arial, Helvetica, sans-serif;
 }
 
 textarea {
@@ -44,7 +55,23 @@ textarea {
 
 chatbox {
     font-size: 18px;
-    width: calc(100% - 16px);
+    width: calc(100% - 16px - 200px);
+    height: calc(100% - 80px - 32px - 48px);
+    text-align:left;
+    margin:8px;
+    padding:12px;
+    box-sizing: border-box;
+    border: 4px solid #999;
+    border-radius: 4px;
+    background-color: #f8f8f8;
+    overflow-y: scroll !important; 
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+listbox {
+    font-size: 18px;
+    width: calc(200px - 16px);
     height: calc(100% - 80px - 32px - 48px);
     text-align:left;
     margin:8px;
@@ -58,3 +85,18 @@ chatbox {
     word-wrap: break-word;
 }
  
+input {
+    position: fixed;
+    left: calc(50% - 150px);
+    top: 50px;
+    font-size: 16px;
+    width: 300px;
+    height: 50px;
+    margin: 8px;
+    padding: 12px;
+    box-sizing: border-box;
+    border: 4px solid #999;
+    border-radius: 4px;
+    background-color: #f8f8f8;
+    resize: none;
+}

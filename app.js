@@ -30,12 +30,11 @@ io.sockets.on('connection', function (socket) {
 	socket.id = idIncrement++;
 	socketList[socket.id] = socket;
 
-	chatterList[socket.id] = new Chatter(socket.id);
-
 	console.log('Client Connected: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Time: " + getSuperTime(new Date()));
 
 	socket.on('init', function(data){
-		console.log('Client Initilized: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Username: " + data+ " | Time: " + getSuperTime(new Date()));
+		console.log('Client Initilized: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Username: " + data + " | Time: " + getSuperTime(new Date()));
+		chatterList[socket.id] = new Chatter(socket.id);
 		chatterList[socket.id].name = data;
 		
 		let date = new Date();
@@ -52,28 +51,29 @@ io.sockets.on('connection', function (socket) {
 			let socket = socketList[i];
 			socket.emit('newChatAnnouncement', pack);
 		}
+
+		updateUserList();
+	});
+
+	socket.on('deinit', function(){
+		console.log('Client Deinitilized: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Time: " + getSuperTime(new Date()));
+
+		announceDisconnect(chatterList[socket.id]);
+
+		delete chatterList[socket.id];
+
+		updateUserList();
 	});
 
 	socket.on('disconnect', function(){
 		console.log('Client Disconnected: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Time: " + getSuperTime(new Date()));
 
-		let date = new Date();
-		let pack = {
-			spanner: '<span style="color: #800;">',
-			time: getTime(date),
-			timeStamp: date.getTime(),
-			username: chatterList[socket.id].name,
-			message: " has Disconnected.",
-		};
-
-		for (let i in socketList) 
-		{
-			let socket = socketList[i];
-			socket.emit('newChatAnnouncement', pack);
-		}
+		announceDisconnect(chatterList[socket.id]);
 		
 		delete socketList[socket.id];
 		delete chatterList[socket.id];
+
+		updateUserList();
 	});
 
 	socket.on('chat', function(data){
@@ -82,7 +82,7 @@ io.sockets.on('connection', function (socket) {
 			time: getTime(date),
 			timeStamp: date.getTime(),
 			username: chatterList[socket.id].name,
-			message: data,
+			message: cleanseMessage(data),
 		};
 
 		console.log(pack.time + " - " + pack.username + ": " + pack.message);
@@ -94,6 +94,60 @@ io.sockets.on('connection', function (socket) {
 		}
 	});
 });
+
+function announceDisconnect(chatter)
+{
+	let date = new Date();
+	let pack = {
+		spanner: '<span style="color: #800;">',
+		time: getTime(date),
+		timeStamp: date.getTime(),
+		username: chatter.name,
+		message: " has Disconnected.",
+	};
+
+	for (let i in socketList) 
+	{
+		let socket = socketList[i];
+		socket.emit('newChatAnnouncement', pack);
+	}
+}
+
+function cleanseMessage(message)
+{
+	const dirtys = ['<'];
+	for (let i = 0; i < message.length; i++)
+	{
+		let succeded = false;
+		for (let d = 0; d < dirtys.length; d++)
+		{
+			if (message[i] == dirtys[d])
+			{
+				succeded = true;
+				break;
+			}
+		}
+		if (succeded)
+		{
+			message = message.slice(0, i) + '\\' + message.slice(i);
+			i += 1;
+		}
+	}
+	return message;
+}
+
+function updateUserList()
+{
+	let pack = [];
+	for (let i in chatterList)
+	{
+		pack.push(chatterList[i].name);
+	}
+	for (let i in socketList) 
+	{
+		socketList[i].emit('newUserList', pack);
+	}
+}
 
 function getMonth(date)
 {
