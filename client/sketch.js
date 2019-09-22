@@ -184,9 +184,16 @@ function acceptedUsername()
     createLobby();
 }
 
-function failedUsername()
+function failedUsername(data)
 {
-    errorText.html('Username invalid. Length must be between 3 and 16 (inclusive). No special characters aside from _ and -.')
+    if (data == 0)
+    {
+        errorText.html('Username invalid. Length must be between 3 and 20 (inclusive). No special characters aside from _ and -.')
+    }
+    else
+    {
+        errorText.html('Username invalid. Username is already in use.')
+    }
 }
 
 function leaveMain()

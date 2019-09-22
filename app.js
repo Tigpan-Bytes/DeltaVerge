@@ -13,6 +13,11 @@ class Chatter
 }
 
 const express = require('express');
+const fs = require('fs');
+const bcrypt = require('bcrypt'); //https://www.npmjs.com/package/bcrypt
+
+let userData = fs.readFileSync('users.json');//TODO: Make registering, saving, and loading of accounts
+let users = JSON.parse(userData);  //dictionary username:hash
 
 let app = express();
 let serv = require('http').Server(app);
@@ -45,16 +50,23 @@ io.sockets.on('connection', function (socket) {
 	socket.on('init', function(data){
 		if (isAllowedUsername(data))
 		{
-			sendRoomLists(socket);
-			socket.emit('acceptedUN');
+			if (isUsernameFree(data))
+			{
+				sendRoomLists(socket);
+				socket.emit('acceptedUN');
 
-			console.log('Client Initilized: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Username: " + data + " | Time: " + getSuperTime(new Date()));
-			chatterList[socket.id] = new Chatter(socket.id);
-			chatterList[socket.id].name = data;
+				console.log('Client Initilized: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Username: " + data + " | Time: " + getSuperTime(new Date()));
+				chatterList[socket.id] = new Chatter(socket.id);
+				chatterList[socket.id].name = data;
+			}
+			else
+			{
+				socket.emit('failedUN', 1);
+			}
 		}
 		else
 		{
-			socket.emit('failedUN');
+			socket.emit('failedUN', 0);
 		}
 	});
 
@@ -133,7 +145,7 @@ io.sockets.on('connection', function (socket) {
 			message: cleanseMessage(data),
 		};
 
-		console.log(pack.time + " - " + pack.username + ": " + pack.message);
+		console.log(pack.time + " - " + chatterList[socket.id].room + " - " + pack.username + ": " + pack.message);
 
 		for (let i in chatterList) 
 		{
@@ -154,7 +166,7 @@ function usableRoom(room)
 
 function isAllowedUsername(un)
 {
-	if (un.length <= 2 || un.length > 16)
+	if (un.length <= 2 || un.length > 20)
 	{
 		return false;
 	}
@@ -169,6 +181,19 @@ function isAllowedUsername(un)
 		}
 
 		if (code < 48 || (code > 57 && code < 65) || (code > 90 && code < 97) || code > 122)
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+function isUsernameFree(un)
+{
+	for (let i in chatterList) 
+	{
+		if (chatterList[i].name == un)
 		{
 			return false;
 		}
