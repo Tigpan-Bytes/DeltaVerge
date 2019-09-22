@@ -228,22 +228,22 @@ function announceDisconnect(chatter)
 
 function cleanseMessage(message)
 {
-	const dirtys = ['<'];
+	const dirtys = [['<', '&#60;']];
 	for (let i = 0; i < message.length; i++)
 	{
-		let succeded = false;
+		let succeded = -1;
 		for (let d = 0; d < dirtys.length; d++)
 		{
-			if (message[i] == dirtys[d])
+			if (message[i] == dirtys[d][0])
 			{
-				succeded = true;
+				succeded = d;
 				break;
 			}
 		}
-		if (succeded)
+		if (succeded != -1)
 		{
-			message = message.slice(0, i) + '\\' + message.slice(i);
-			i += 1;
+			message = message.slice(0, i) + dirtys[succeded][1] + message.slice(i + 1);
+			i += 2;
 		}
 	}
 	return message;

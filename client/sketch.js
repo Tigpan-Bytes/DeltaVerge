@@ -3,6 +3,7 @@ let socket;
 let username;
 let tempUsername;
 let room;
+let lastChatName;
 
 let aRoomCount = 0;
 let bRoomCount = 0;
@@ -165,7 +166,7 @@ function createChatRoom()
     textInputField = createElement('textarea', '');
     textInputField.attribute('placeholder', 'Chat here...');
 
-    chatBox = createElement('chatbox', '<i>&nbsp;&nbsp;&nbsp;&nbsp;Welcome to <b>Room ' + room + '</b>! Type, then press enter to chat.</i>');
+    chatBox = createElement('chatbox', '<i>&nbsp;&nbsp;&nbsp;&nbsp;Welcome to <b>Room ' + room + '</b>! Type, then press enter to chat.</i>\n ');
     userList = createElement('listbox', '<i>User List:\n</i>');
 
     welcomeText = createElement('welcome', 'Welcome, <b>' + username + '</b>, to <b>Room ' + room + '</b>.');
@@ -177,6 +178,8 @@ function createChatRoom()
         createLobby();
     });
     lobbyButton.size(170, 40);
+
+    lastChatName = '';
 
     windowResized();
 }
@@ -261,6 +264,16 @@ function windowResized()
         cText.position(windowWidth / 6, (windowHeight / 5) * 3 + 30);
         dButton.position(windowWidth / 6, (windowHeight / 5) * 4 - 30);
         dText.position(windowWidth / 6, (windowHeight / 5) * 4 + 30);
+
+        aButton.size((windowWidth / 3) * 2, 60);
+        bButton.size((windowWidth / 3) * 2, 60);
+        cButton.size((windowWidth / 3) * 2, 60);
+        dButton.size((windowWidth / 3) * 2, 60);
+
+        aText.size((windowWidth / 3) * 2, 60);
+        bText.size((windowWidth / 3) * 2, 60);
+        cText.size((windowWidth / 3) * 2, 60);
+        dText.size((windowWidth / 3) * 2, 60);
     }
     else if (state == States.room)
     {
@@ -285,29 +298,40 @@ function fullScroll()
 
 function updateUserList(data)
 {
-    userList.html("<i>User List:\n</i>");
+    userList.html("<i>User List:</i>");
     for (let i = 0; i < data.length; i++)
     {
-        userList.html("\n>" + data[i], true);
+        userList.html("\n\n" + data[i], true);
     }
+    userList.html("\n ", true);
 }
 
 function addChatMessage(data)
 { //270 for height - 4 for border
     let isTop = isScrolled();
 
+    chatBox.html(chatBox.html().slice(0, chatBox.html().length - 3));
     //Put message in chatbox
     if (lastMessageTimeStamp == null || data.timeStamp > lastMessageTimeStamp + threeMinutes || data.timeStamp > lastPrintedMessageTimeStamp + tenMinutes)
     {
         lastMessageTimeStamp = data.timeStamp;
         lastPrintedMessageTimeStamp = data.timeStamp;
-        chatBox.html("\n" + data.time + " - <b>" + getNameSpanner(data.username) + data.username + "</span></b>: " + getMessageSpanner(data.username) + data.message + "</span>", true);
+        chatBox.html("\n\n" + data.time + " - <b>" + getNameSpanner(data.username) + data.username + "</span></b>:\n" + getMessageSpanner(data.username) + data.message + "</span>\n ", true);
     }
     else
     {
         lastMessageTimeStamp = data.timeStamp;
-        chatBox.html("\n&nbsp;&nbsp;&nbsp;&nbsp;<b>" + getNameSpanner(data.username) + data.username + "</span></b>: " + getMessageSpanner(data.username) + data.message + "</span>", true);
+        if (lastChatName != data.username)
+        {
+            chatBox.html("\n\n&nbsp;&nbsp;&nbsp;&nbsp;<b>" + getNameSpanner(data.username) + data.username + "</span></b>:\n" + getMessageSpanner(data.username) + data.message + "</span>\n ", true);
+        }
+        else
+        {
+            chatBox.html("\n" + getMessageSpanner(data.username) + data.message + "</span>\n ", true);
+        }
     }
+
+    lastChatName = data.username;
 
     if (isTop)
     {
@@ -332,7 +356,8 @@ function addChatAnnouncement(data)
 
     lastMessageTimeStamp = data.timeStamp;
     lastPrintedMessageTimeStamp = data.timeStamp;
-    chatBox.html("\n<i>" + data.spanner + data.time + " - " + data.username + data.message + "</i></span>", true);
+    chatBox.html(chatBox.html().slice(0, chatBox.html().length - 2));
+    chatBox.html("\n\n<i>" + data.spanner + data.time + " - " + data.username + data.message + "</i></span>\n ", true);
 
     if (isTop)
     {
