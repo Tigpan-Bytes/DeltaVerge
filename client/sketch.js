@@ -18,9 +18,13 @@ let errorText;
 let logout;
 let nameText;
 let aButton;
+let aText;
 let bButton;
+let bText;
 let cButton;
+let cText;
 let dButton;
+let dText;
 
 //room
 let textInputField;
@@ -100,10 +104,14 @@ function createLobby()
 
     nameText = createElement('welcome', 'Welcome, <b>' + username + '</b>, to Pictochat.');
 
-    aButton = createButton('Join Room A. ' + aRoomCount + ' Chatters Active.');
-    bButton = createButton('Join Room B. ' + bRoomCount + ' Chatters Active.');
-    cButton = createButton('Join Room C. ' + cRoomCount + ' Chatters Active.');
-    dButton = createButton('Join Room D. ' + dRoomCount + ' Chatters Active.');
+    aButton = createButton('Join Room A.');
+    aText  = createElement('chatterCount', aRoomCount + ' Chatters Active.');
+    bButton = createButton('Join Room B.');
+    bText  = createElement('chatterCount', bRoomCount + ' Chatters Active.');
+    cButton = createButton('Join Room C.');
+    cText  = createElement('chatterCount', cRoomCount + ' Chatters Active.');
+    dButton = createButton('Join Room D.');
+    dText  = createElement('chatterCount', dRoomCount + ' Chatters Active.');
 
     aButton.mouseClicked(function(){
         socket.emit('room', 'a');
@@ -138,6 +146,11 @@ function createLobby()
     bButton.size((windowWidth / 3) * 2, 60);
     cButton.size((windowWidth / 3) * 2, 60);
     dButton.size((windowWidth / 3) * 2, 60);
+
+    aText.size((windowWidth / 3) * 2, 60);
+    bText.size((windowWidth / 3) * 2, 60);
+    cText.size((windowWidth / 3) * 2, 60);
+    dText.size((windowWidth / 3) * 2, 60);
 
     aButton.style('font-size', '26px');
     bButton.style('font-size', '26px');
@@ -207,10 +220,16 @@ function leaveLobby()
 {
     logout.remove();
     nameText.remove();
+
     aButton.remove();
     bButton.remove();
     cButton.remove();
     dButton.remove();
+
+    aText.remove();
+    bText.remove();
+    cText.remove();
+    dText.remove();
 }
 
 function leaveRoom()
@@ -235,9 +254,13 @@ function windowResized()
         nameText.position(0,0);
 
         aButton.position(windowWidth / 6, (windowHeight / 5) * 1 - 30);
+        aText.position(windowWidth / 6, (windowHeight / 5) * 1 + 30);
         bButton.position(windowWidth / 6, (windowHeight / 5) * 2 - 30);
+        bText.position(windowWidth / 6, (windowHeight / 5) * 2 + 30);
         cButton.position(windowWidth / 6, (windowHeight / 5) * 3 - 30);
+        cText.position(windowWidth / 6, (windowHeight / 5) * 3 + 30);
         dButton.position(windowWidth / 6, (windowHeight / 5) * 4 - 30);
+        dText.position(windowWidth / 6, (windowHeight / 5) * 4 + 30);
     }
     else if (state == States.room)
     {
@@ -299,11 +322,7 @@ function getNameSpanner(un) // used for rank colours
 
 function getMessageSpanner(un) // used for rank colours
 {
-    if (un == username)
-    {
-        return '<span class="yourText">';
-    }
-    return '<span class="otherText">';
+    return '<span class="text">';
 }
 
 function addChatAnnouncement(data)
@@ -325,10 +344,10 @@ function draw()
 {
     if (state == States.lobby)
     {
-        aButton.html('Join Room A. ' + aRoomCount + ' Chatters Active.');
-        bButton.html('Join Room B. ' + bRoomCount + ' Chatters Active.');
-        cButton.html('Join Room C. ' + cRoomCount + ' Chatters Active.');
-        dButton.html('Join Room D. ' + dRoomCount + ' Chatters Active.');
+        aText.html(aRoomCount + ' Chatters Active.');
+        bText.html(bRoomCount + ' Chatters Active.');
+        cText.html(cRoomCount + ' Chatters Active.');
+        dText.html(dRoomCount + ' Chatters Active.');
     }
     else if (state == States.room)
     {

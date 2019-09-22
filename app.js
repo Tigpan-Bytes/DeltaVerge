@@ -123,17 +123,20 @@ io.sockets.on('connection', function (socket) {
 	});
 
 	socket.on('disconnect', function(){
-		console.log('Client Disconnected: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Time: " + getSuperTime(new Date()));
-
-		delete socketList[socket.id];
-		if (socket.id in chatterList)
+		if (socket.id in socketList)
 		{
-			announceDisconnect(chatterList[socket.id]);
-		
-			delete chatterList[socket.id];
+			console.log('Client Disconnected: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Time: " + getSuperTime(new Date()));
 
-			updateUserList();
-		}
+			if (socket.id in chatterList)
+			{
+				announceDisconnect(chatterList[socket.id]);
+			
+				delete chatterList[socket.id];
+
+				updateUserList();
+			}
+			delete socketList[socket.id];
+		}					
 	});
 
 	socket.on('chat', function(data){
