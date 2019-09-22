@@ -358,6 +358,7 @@ function addChatAnnouncement(data)
     lastPrintedMessageTimeStamp = data.timeStamp;
     chatBox.html(chatBox.html().slice(0, chatBox.html().length - 2));
     chatBox.html("\n\n<i>" + data.spanner + data.time + " - " + data.username + data.message + "</i></span>\n ", true);
+    lastChatName = '';
 
     if (isTop)
     {
