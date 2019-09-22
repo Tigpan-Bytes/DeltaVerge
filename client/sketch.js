@@ -1,11 +1,26 @@
 //all
 let socket;
 let username;
+let tempUsername;
+let room;
+
+let aRoomCount = 0;
+let bRoomCount = 0;
+let cRoomCount = 0;
+let dRoomCount = 0;
 
 //main
 let usernameField;
 let confirmButton;
 let errorText;
+
+//lobby
+let logout;
+let nameText;
+let aButton;
+let bButton;
+let cButton;
+let dButton;
 
 //room
 let textInputField;
@@ -22,21 +37,114 @@ let threeMinutes = 180000;
 let tenMinutes = 600000;
 
 let States = {
-    lobby: 0,
-    room: 1
+    main: 0,
+    lobby: 1,
+    room: 2
 };
 
-let state = States.lobby;
+let state = States.main;
 
 function setup()
 {
-    createLobby();
+    createMain();
 
     socket = io();
 
     socket.on('newChatMessage', addChatMessage);
     socket.on('newChatAnnouncement', addChatAnnouncement);
     socket.on('newUserList', updateUserList);
+    socket.on('acceptedUN', acceptedUsername);
+    socket.on('failedUN', failedUsername);
+    socket.on('roomCounts', function(data){
+        aRoomCount = data['a'];
+        bRoomCount = data['b'];
+        cRoomCount = data['c'];
+        dRoomCount = data['d'];
+    });
+    socket.on('connect', function(){
+        if (state == States.room) { leaveRoom(); }
+        if (state == States.lobby) { leaveLobby(); }
+        if (state != States.main) { createMain(); }
+        socket.emit('deinit');
+        state = States.main;
+        windowResized();
+    });
+}
+
+function createMain()
+{
+    usernameField = createElement('input', '');
+    usernameField.attribute('placeholder', 'Username...');
+
+    confirmButton = createButton('Login as Guest');
+    confirmButton.mouseClicked(attemptUsername)
+    confirmButton.size(160, 30);
+
+    errorText = createElement('errorText', '');
+    errorText.size(windowWidth / 2, 1000);
+
+    windowResized();
+}
+
+function createLobby()
+{
+    logout = createButton('Logout');
+    logout.size(90, 30);
+
+    logout.mouseClicked(function(){
+        socket.emit('deinit');
+        leaveLobby();
+        state = States.main;
+        createMain();
+    });
+
+    nameText = createElement('welcome', 'Welcome, <b>' + username + '</b>, to Pictochat.');
+
+    aButton = createButton('Join Room A. ' + aRoomCount + ' Chatters Active.');
+    bButton = createButton('Join Room B. ' + bRoomCount + ' Chatters Active.');
+    cButton = createButton('Join Room C. ' + cRoomCount + ' Chatters Active.');
+    dButton = createButton('Join Room D. ' + dRoomCount + ' Chatters Active.');
+
+    aButton.mouseClicked(function(){
+        socket.emit('room', 'a');
+        room = "A";
+        leaveLobby();
+        state = States.room;
+        createChatRoom();
+    });
+    bButton.mouseClicked(function(){
+        socket.emit('room', 'b');
+        room = "B";
+        leaveLobby();
+        state = States.room;
+        createChatRoom();
+    });
+    cButton.mouseClicked(function(){
+        socket.emit('room', 'c');
+        room = "C";
+        leaveLobby();
+        state = States.room;
+        createChatRoom();
+    });
+    dButton.mouseClicked(function(){
+        socket.emit('room', 'd');
+        room = "D";
+        leaveLobby();
+        state = States.room;
+        createChatRoom();
+    });
+
+    aButton.size((windowWidth / 3) * 2, 60);
+    bButton.size((windowWidth / 3) * 2, 60);
+    cButton.size((windowWidth / 3) * 2, 60);
+    dButton.size((windowWidth / 3) * 2, 60);
+
+    aButton.style('font-size', '26px');
+    bButton.style('font-size', '26px');
+    cButton.style('font-size', '26px');
+    dButton.style('font-size', '26px');
+
+    windowResized();
 }
 
 function createChatRoom()
@@ -44,71 +152,91 @@ function createChatRoom()
     textInputField = createElement('textarea', '');
     textInputField.attribute('placeholder', 'Chat here...');
 
-    chatBox = createElement('chatbox', '<i>&nbsp;&nbsp;&nbsp;&nbsp;Welcome to the chat room! Type, then press enter to chat.</i>');
+    chatBox = createElement('chatbox', '<i>&nbsp;&nbsp;&nbsp;&nbsp;Welcome to <b>Room ' + room + '</b>! Type, then press enter to chat.</i>');
     userList = createElement('listbox', '<i>User List:\n</i>');
 
-    welcomeText = createElement('welcome', 'Welcome, <b>' + username + '</b>, to Room A.');
+    welcomeText = createElement('welcome', 'Welcome, <b>' + username + '</b>, to <b>Room ' + room + '</b>.');
     lobbyButton = createButton('Return to lobby');
-    lobbyButton.mouseClicked(returnToLobby)
+    lobbyButton.mouseClicked(function(){
+        socket.emit('leaveRoom');
+        leaveRoom();
+        state = States.lobby;
+        createLobby();
+    });
     lobbyButton.size(170, 40);
-
-    windowResized();
-}
-
-function createLobby()
-{
-    usernameField = createElement('input', '');;
-    usernameField.attribute('placeholder', 'Username...');
-
-    confirmButton = createButton('Login as Guest');;
-    confirmButton.mouseClicked(attemptUsername)
-    confirmButton.size(160, 30);
 
     windowResized();
 }
 
 function attemptUsername() //TODO: Don't allow all usernames
 {
-    username = usernameField.value();
-    socket.emit('init', username);
-    goToRoom();
+    tempUsername = usernameField.value();
+    socket.emit('init', tempUsername);
+    usernameField.value('');
 }
 
-function returnToLobby()
+function acceptedUsername()
 {
-    socket.emit('deinit');
+    username = tempUsername;
+
+    leaveMain();
+    state = States.lobby;
+    createLobby();
+}
+
+function failedUsername()
+{
+    errorText.html('Username invalid. Length must be between 3 and 16 (inclusive). No special characters aside from _ and -.')
+}
+
+function leaveMain()
+{
+    usernameField.remove();
+    confirmButton.remove();
+    errorText.remove();
+}
+
+function leaveLobby()
+{
+    logout.remove();
+    nameText.remove();
+    aButton.remove();
+    bButton.remove();
+    cButton.remove();
+    dButton.remove();
+}
+
+function leaveRoom()
+{
     textInputField.remove();
     chatBox.remove();
     userList.remove();
     welcomeText.remove();
     lobbyButton.remove();
-
-    state = States.lobby;
-
-    createLobby();
-}
-
-function goToRoom()
-{
-    usernameField.remove();
-    confirmButton.remove();
-
-    state = States.room;
-
-    createChatRoom();
 }
 
 function windowResized() 
 {
-    if (state == States.lobby)
+    if (state == States.main)
     {
         confirmButton.position(windowWidth / 2 - 50 - 24, 120);
+        errorText.position(windowWidth / 4, 190);
+    }
+    else if (state == States.lobby)
+    {
+        logout.position(windowWidth - 100, 8);
+        nameText.position(0,0);
+
+        aButton.position(windowWidth / 6, (windowHeight / 5) * 1 - 30);
+        bButton.position(windowWidth / 6, (windowHeight / 5) * 2 - 30);
+        cButton.position(windowWidth / 6, (windowHeight / 5) * 3 - 30);
+        dButton.position(windowWidth / 6, (windowHeight / 5) * 4 - 30);
     }
     else if (state == States.room)
     {
         textInputField.position(0, windowHeight - (80 + 16));
         chatBox.position(0, 48);
-        userList.position(windowWidth - 200, 48);
+        userList.position(windowWidth - 240, 48);
         chatBoxHeight = windowHeight - 80 - 32 - 48 - 8; // 8 for border
         welcomeText.position(0,0);
         lobbyButton.position(windowWidth - 180, 8);
@@ -130,7 +258,7 @@ function updateUserList(data)
     userList.html("<i>User List:\n</i>");
     for (let i = 0; i < data.length; i++)
     {
-        userList.html("\n" + data[i], true);
+        userList.html("\n>" + data[i], true);
     }
 }
 
@@ -188,7 +316,14 @@ function addChatAnnouncement(data)
 
 function draw()
 {
-    if (state == States.room)
+    if (state == States.lobby)
+    {
+        aButton.html('Join Room A. ' + aRoomCount + ' Chatters Active.');
+        bButton.html('Join Room B. ' + bRoomCount + ' Chatters Active.');
+        cButton.html('Join Room C. ' + cRoomCount + ' Chatters Active.');
+        dButton.html('Join Room D. ' + dRoomCount + ' Chatters Active.');
+    }
+    else if (state == States.room)
     {
         if (resetFields)
         {

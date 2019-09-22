@@ -8,6 +8,7 @@ class Chatter
 		this.x = 250;
 		this.y = 50;
 		this.name = "null";
+		this.room = "null";
 	}
 }
 
@@ -23,57 +24,104 @@ printLanAddress();
 
 let socketList = {}; //dictionary
 let chatterList = {}; //dictionary
+let chatterRoomCount = {}; //dictionary
+
+chatterRoomCount["a"] = 0;
+chatterRoomCount["b"] = 0;
+chatterRoomCount["c"] = 0;
+chatterRoomCount["d"] = 0;
+
 let idIncrement = 0;
 
 let io = require('socket.io')(serv, {});
+
 io.sockets.on('connection', function (socket) {
 	socket.id = idIncrement++;
 	socketList[socket.id] = socket;
 
 	console.log('Client Connected: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Time: " + getSuperTime(new Date()));
+	//socket.emit('resetClient');
 
 	socket.on('init', function(data){
-		console.log('Client Initilized: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Username: " + data + " | Time: " + getSuperTime(new Date()));
-		chatterList[socket.id] = new Chatter(socket.id);
-		chatterList[socket.id].name = data;
-		
-		let date = new Date();
-		let pack = {
-			spanner: '<span style="color: #080;">',
-			time: getTime(date),
-			timeStamp: date.getTime(),
-			username: chatterList[socket.id].name,
-			message: " has Connected!",
-		};
-	
-		for (let i in socketList) 
+		if (isAllowedUsername(data))
 		{
-			let socket = socketList[i];
-			socket.emit('newChatAnnouncement', pack);
-		}
+			sendRoomLists(socket);
+			socket.emit('acceptedUN');
 
-		updateUserList();
+			console.log('Client Initilized: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Username: " + data + " | Time: " + getSuperTime(new Date()));
+			chatterList[socket.id] = new Chatter(socket.id);
+			chatterList[socket.id].name = data;
+		}
+		else
+		{
+			socket.emit('failedUN');
+		}
+	});
+
+	socket.on('room', function(data){
+		if (usableRoom(data))
+		{
+			console.log('Client Changed Room: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Username: " + chatterList[socket.id].name + " | Room: " + data +  " | Time: " + getSuperTime(new Date()));
+			chatterList[socket.id].room = data;
+			
+			let date = new Date();
+			let pack = {
+				spanner: '<span style="color: #080;">',
+				time: getTime(date),
+				timeStamp: date.getTime(),
+				username: chatterList[socket.id].name,
+				message: " has Connected!",
+			};
+		
+			for (let i in chatterList) 
+			{
+				let tempSocket = socketList[i];
+				if (chatterList[i].room == data)
+				{
+					tempSocket.emit('newChatAnnouncement', pack);
+				}
+			}
+
+			updateUserList();
+		}
 	});
 
 	socket.on('deinit', function(){
-		console.log('Client Deinitilized: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Time: " + getSuperTime(new Date()));
+		if (socket.id in chatterList)
+		{
+			console.log('Client Deinitilized: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Time: " + getSuperTime(new Date()));
 
-		announceDisconnect(chatterList[socket.id]);
+			announceDisconnect(chatterList[socket.id]);
 
-		delete chatterList[socket.id];
+			delete chatterList[socket.id];
+		}
+	});
 
-		updateUserList();
+	socket.on('leaveRoom', function(){
+		console.log('Client Left Room: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Username: " + chatterList[socket.id].name + " | Room: " + chatterList[socket.id].room +  " | Time: " + getSuperTime(new Date()));
+
+		if (socket.id in chatterList)
+		{
+			announceDisconnect(chatterList[socket.id]);
+
+			chatterList[socket.id].room = "null";
+
+			updateUserList();
+		}
 	});
 
 	socket.on('disconnect', function(){
 		console.log('Client Disconnected: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Time: " + getSuperTime(new Date()));
 
-		announceDisconnect(chatterList[socket.id]);
-		
 		delete socketList[socket.id];
-		delete chatterList[socket.id];
+		if (socket.id in chatterList)
+		{
+			announceDisconnect(chatterList[socket.id]);
+		
+			delete chatterList[socket.id];
 
-		updateUserList();
+			updateUserList();
+		}
 	});
 
 	socket.on('chat', function(data){
@@ -87,13 +135,47 @@ io.sockets.on('connection', function (socket) {
 
 		console.log(pack.time + " - " + pack.username + ": " + pack.message);
 
-		for (let i in socketList) 
+		for (let i in chatterList) 
 		{
-			let socket = socketList[i];
-			socket.emit('newChatMessage', pack);
+			let tempSocket = socketList[i];
+
+			if (chatterList[socket.id].room == chatterList[i].room)
+			{
+				tempSocket.emit('newChatMessage', pack);
+			}
 		}
 	});
 });
+
+function usableRoom(room)
+{
+	return (room == "a" || room == "b" || room == "c" || room == "d" || room == "null");
+}
+
+function isAllowedUsername(un)
+{
+	if (un.length <= 2 || un.length > 16)
+	{
+		return false;
+	}
+
+	for (let i = 0; i < un.length; i++)
+	{
+		let code = un.charCodeAt(i);
+		
+		if (code == 45 || code == 95) // exceptions for hyphen and undersocre
+		{
+			continue;
+		}
+
+		if (code < 48 || (code > 57 && code < 65) || (code > 90 && code < 97) || code > 122)
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
 
 function announceDisconnect(chatter)
 {
@@ -106,10 +188,13 @@ function announceDisconnect(chatter)
 		message: " has Disconnected.",
 	};
 
-	for (let i in socketList) 
+	for (let i in chatterList) 
 	{
-		let socket = socketList[i];
-		socket.emit('newChatAnnouncement', pack);
+		let tempSocket = socketList[i];
+		if (chatter.room == chatterList[i].room)
+		{
+			tempSocket.emit('newChatAnnouncement', pack);
+		}
 	}
 }
 
@@ -138,14 +223,42 @@ function cleanseMessage(message)
 
 function updateUserList()
 {
-	let pack = [];
-	for (let i in chatterList)
-	{
-		pack.push(chatterList[i].name);
-	}
+	updateRoomList('a');
+	updateRoomList('b');
+	updateRoomList('c');
+	updateRoomList('d');
+
 	for (let i in socketList) 
 	{
-		socketList[i].emit('newUserList', pack);
+		sendRoomLists(socketList[i]);
+	}
+}
+
+function sendRoomLists(socket)
+{
+	socket.emit('roomCounts', chatterRoomCount);
+}
+
+function updateRoomList(room)
+{
+	let pack = [];
+	let count = 0;
+	for (let i in chatterList)
+	{
+		if (chatterList[i].room == room)
+		{
+			pack.push(chatterList[i].name);
+			count++;
+		}
+	}
+	chatterRoomCount[room] = count;
+
+	for (let i in chatterList) 
+	{
+		if (chatterList[i].room == room)
+		{
+			socketList[i].emit('newUserList', pack);
+		}
 	}
 }
 
