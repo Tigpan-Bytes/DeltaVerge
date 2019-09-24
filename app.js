@@ -9,6 +9,7 @@ class Chatter
 		this.y = 50;
 		this.name = "null";
 		this.room = "null";
+		this.rank = "reg";
 	}
 }
 
@@ -16,8 +17,23 @@ const express = require('express');
 const fs = require('fs');
 const bcrypt = require('bcrypt'); //https://www.npmjs.com/package/bcrypt
 
-let userData = fs.readFileSync('users.json');//TODO: Make registering, saving, and loading of accounts
-let users = JSON.parse(userData);  //dictionary username:{hash,rank}
+let userData;
+let users;
+
+try
+{
+	userData = fs.readFileSync('users.json');//TODO: Make registering, saving, and loading of accounts
+	users = JSON.parse(userData);  //dictionary username:{hash,rank}
+	console.log("\nUser data loaded successfully.");
+}
+catch (err)
+{
+	console.log("\nERROR: USER DATA CORRUPTED! RESTART SERVER!");
+	console.log("\nERROR: USER DATA CORRUPTED! RESTART SERVER!");
+	console.log("\nERROR: USER DATA CORRUPTED! RESTART SERVER!");
+	console.log("\nERROR: USER DATA CORRUPTED! RESTART SERVER!");
+	console.log("\nERROR: USER DATA CORRUPTED! RESTART SERVER!");
+}
 
 let app = express();
 let serv = require('http').Server(app);
@@ -40,6 +56,8 @@ let idIncrement = 0;
 
 let io = require('socket.io')(serv, {});
 
+try
+{
 io.sockets.on('connection', function (socket) {
 	socket.id = idIncrement++;
 	socketList[socket.id] = socket;
@@ -52,7 +70,7 @@ io.sockets.on('connection', function (socket) {
 		{
 			if (isUsernameFree(data))
 			{
-				initilize(socket, data);
+				initilize(socket, data, "guest");
 			}
 			else
 			{
@@ -65,6 +83,35 @@ io.sockets.on('connection', function (socket) {
 		}
 	});
 
+	socket.on('login', function(data){
+		if (data.un in users)
+		{
+			bcrypt.compare(data.pw, users[data.un].hash, function(err, res){
+				if (err)
+				{
+					console.error(err);
+					socket.emit('failedUN', 4);
+				}
+				else
+				{
+					if (res)
+					{
+						console.log('Client Logged In: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Username: " + data.un + " | Rank: " + users[data.un].rank + " | Time: " + getSuperTime(new Date()));
+						initilize(socket, data.un, users[data.un].rank);
+					}
+					else
+					{
+						socket.emit('failedUN', 4);
+					}
+				}
+			});
+		}
+		else
+		{
+			socket.emit('failedUN', 4);
+		}
+	});
+
 	socket.on('register', function(data){
 		if (isAllowedUsername(data.un))
 		{
@@ -72,7 +119,27 @@ io.sockets.on('connection', function (socket) {
 			{
 				if (isAllowedPassword(data.pw))
 				{
-					initilize(socket, data.un);
+					bcrypt.hash(data.pw, 12, function(err, hash){
+						if (err)
+						{
+							console.error(err);
+						}
+						else
+						{
+							users[data.un] = {
+								hash: hash, 
+								rank: 'reg'
+							};
+							fs.writeFile('users.json', JSON.stringify(users, null, 2), function(err){
+								if (err)
+								{
+									console.error(err);
+								}
+							});
+						}
+					});
+					console.log('Client Registered Account: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Username: " + data.un + " | Time: " + getSuperTime(new Date()));
+					initilize(socket, data.un, "reg");
 				}
 				else
 				{
@@ -90,12 +157,65 @@ io.sockets.on('connection', function (socket) {
 		}
 	});
 
+	socket.on('changePW', function(data){
+		if (isAllowedPassword(data.newPw))
+		{
+			if (chatterList[socket.id].name in users)
+			{
+				bcrypt.compare(data.pw, users[chatterList[socket.id].name].hash, function(err, res){
+					if (err)
+					{
+						console.error(err);
+						socket.emit('failedUN', 4);
+					}
+					else
+					{
+						if (res)
+						{
+							bcrypt.hash(data.newPw, 12, function(err, hash){
+								if (err)
+								{
+									console.error(err);
+								}
+								else
+								{
+									users[chatterList[socket.id].name].hash = hash;
+									fs.writeFile('users.json', JSON.stringify(users, null, 2), function(err){
+										if (err)
+										{
+											console.error(err);
+										}
+									});
+									console.log('Client Changed PW: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Username: " + chatterList[socket.id].name + " | Rank: " + users[chatterList[socket.id].name].rank + " | Time: " + getSuperTime(new Date()));
+									socket.emit('pwSuccess');
+								}
+							});
+						}
+						else
+						{
+							socket.emit('failedUN', 4);
+						}
+					}
+				});	
+			}
+			else
+			{
+				socket.emit('failedUN', 4);
+			}
+			
+		}
+		else
+		{
+			socket.emit('failedUN', 3);
+		}
+	});
+
 	socket.on('room', function(data){
-		if (usableRoom(data))
+		if (typeof(data) == 'string' && usableRoom(data))
 		{
 			if (socket.id in chatterList)
 			{
-				console.log('Client Changed Room: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Username: " + chatterList[socket.id].name + " | Room: " + data +  " | Time: " + getSuperTime(new Date()));
+				console.log('Client Changed Room: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Username: " + chatterList[socket.id].name + " | Room: " + data + " | Rank: " + chatterList[socket.id].rank + " | Time: " + getSuperTime(new Date()));
 				chatterList[socket.id].room = data;
 				
 				let date = new Date();
@@ -133,7 +253,7 @@ io.sockets.on('connection', function (socket) {
 	});
 
 	socket.on('leaveRoom', function(){
-		console.log('Client Left Room: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Username: " + chatterList[socket.id].name + " | Room: " + chatterList[socket.id].room +  " | Time: " + getSuperTime(new Date()));
+		console.log('Client Left Room: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Username: " + chatterList[socket.id].name + " | Room: " + chatterList[socket.id].room + " | Rank: " + chatterList[socket.id].rank + " | Time: " + getSuperTime(new Date()));
 
 		if (socket.id in chatterList)
 		{
@@ -163,17 +283,18 @@ io.sockets.on('connection', function (socket) {
 	});
 
 	socket.on('chat', function(data){
-		if (socket.id in chatterList)
+		if (socket.id in chatterList && typeof(data) == 'string')
 		{
 			let date = new Date();
 			let pack = {
 				time: getTime(date),
 				timeStamp: date.getTime(),
+				rank: chatterList[socket.id].rank,
 				username: chatterList[socket.id].name,
 				message: cleanseMessage(data),
 			};
 
-			console.log(pack.time + " - " + chatterList[socket.id].room + " - " + pack.username + ": " + pack.message);
+			console.log(pack.time + " - " + chatterList[socket.id].room + " - [" + pack.rank + "] " + pack.username + ": " + pack.message);
 
 			for (let i in chatterList) 
 			{
@@ -187,14 +308,24 @@ io.sockets.on('connection', function (socket) {
 		}
 	});
 });
+}
+catch (err)
+{
+	console.error(err);
+}
+finally
+{
 
-function initilize(socket, un)
+}
+
+function initilize(socket, un, rk)
 {
 	sendRoomLists(socket);
 	socket.emit('acceptedUN');
 
 	chatterList[socket.id] = new Chatter(socket.id);
 	chatterList[socket.id].name = un;
+	chatterList[socket.id].rank = rk;
 	console.log('Client Initilized: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Username: " + chatterList[socket.id].name + " | Time: " + getSuperTime(new Date()));
 }
 
@@ -205,6 +336,10 @@ function usableRoom(room)
 
 function isAllowedUsername(un)
 {
+	if (typeof(un) != 'string')
+	{
+		return false;
+	}
 	if (un.length <= 2 || un.length > 20)
 	{
 		return false;
@@ -230,6 +365,10 @@ function isAllowedUsername(un)
 
 function isUsernameFree(un)
 {
+	if (typeof(un) != 'string')
+	{
+		return false;
+	}
 	for (let i in chatterList) 
 	{
 		if (chatterList[i].name == un)
@@ -238,21 +377,29 @@ function isUsernameFree(un)
 		}
 	}
 
+	if (un in users)
+	{
+		return false;
+	}
 	return true;
 }
 
-function isAllowedPassword(un)
+function isAllowedPassword(pw)
 {
-	if (un.length < 6 || un.length > 64)
+	if (typeof(pw) != 'string')
+	{
+		return false;
+	}
+	if (pw.length < 6 || pw.length > 64)
 	{
 		return false;
 	}
 
-	for (let i = 0; i < un.length; i++)
+	for (let i = 0; i < pw.length; i++)
 	{
-		let code = un.charCodeAt(i);
+		let code = pw.charCodeAt(i);
 
-		if (code >= 128)
+		if (code >= 128 && code > 32)
 		{
 			return false;
 		}
@@ -331,7 +478,10 @@ function updateRoomList(room)
 	{
 		if (chatterList[i].room == room)
 		{
-			pack.push(chatterList[i].name);
+			pack.push({
+				un: chatterList[i].name,
+				rank: chatterList[i].rank,
+			});
 			count++;
 		}
 	}

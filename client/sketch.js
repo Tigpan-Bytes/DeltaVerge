@@ -10,6 +10,8 @@ let bRoomCount = 0;
 let cRoomCount = 0;
 let dRoomCount = 0;
 
+let errorText;
+
 //main
 let mainText;
 
@@ -31,10 +33,10 @@ let registerPasswordField;
 let registerConfirmPasswordField;
 let registerConfirmButton;
 
-let errorText;
-
 //lobby
 let logout;
+let changePassword;
+
 let nameText;
 let aButton;
 let aText;
@@ -44,6 +46,19 @@ let cButton;
 let cText;
 let dButton;
 let dText;
+
+//change password
+let backToLobby;
+
+let changePWHolder;
+let changePWName;
+let changePWUsernameField;
+let changePWPasswordField;
+let changePWNewPasswordField;
+let changePWConfirmNewPasswordField;
+let changePWConfirmButton;
+
+let successText;
 
 //room
 let textInputField;
@@ -62,7 +77,8 @@ let forceDisplayTime = 240000;
 let States = {
     main: 0,
     lobby: 1,
-    room: 2
+    room: 2,
+    changePw: 3
 };
 
 let state = States.main;
@@ -87,10 +103,14 @@ function setup()
     socket.on('connect', function(){
         if (state == States.room) { leaveRoom(); }
         if (state == States.lobby) { leaveLobby(); }
+        if (state == States.changePw) { leavePasswordChange(); }
         if (state != States.main) { createMain(); }
         socket.emit('deinit');
         state = States.main;
         windowResized();
+    });
+    socket.on('pwSuccess', function(){
+        successText.html('Password change was successful.');
     });
 }
 
@@ -107,7 +127,7 @@ function createMain()
     guestUsernameField.parent(guestHolder);
 
     guestConfirmButton = createButton('Login as Guest');
-    guestConfirmButton.mouseClicked(attemptUsername)
+    guestConfirmButton.mouseClicked(attemptGuest)
     guestConfirmButton.size(160, 30);
     guestConfirmButton.parent(guestHolder);
 
@@ -122,10 +142,11 @@ function createMain()
 
     loginPasswordField = createElement('input', '');
     loginPasswordField.attribute('placeholder', 'Password...');
+    loginPasswordField.attribute('type', 'password');
     loginPasswordField.parent(loginHolder);
 
     loginConfirmButton = createButton('Login');
-    loginConfirmButton.mouseClicked(attemptUsername)
+    loginConfirmButton.mouseClicked(attemptLogin)
     loginConfirmButton.size(160, 30);
     loginConfirmButton.parent(loginHolder);
 
@@ -163,12 +184,19 @@ function createLobby()
 {
     logout = createButton('Logout');
     logout.size(90, 30);
+    changePassword = createButton('Change Password');
+    changePassword.size(190, 30);
 
     logout.mouseClicked(function(){
         socket.emit('deinit');
         leaveLobby();
         state = States.main;
         createMain();
+    });
+    changePassword.mouseClicked(function(){
+        leaveLobby();
+        state = States.changePw;
+        createPasswordChange();
     });
 
     nameText = createElement('welcome', 'Welcome, <b>' + username + '</b>, to Pictochat.');
@@ -229,6 +257,68 @@ function createLobby()
     windowResized();
 }
 
+function createPasswordChange()
+{
+    backToLobby = createButton('Lobby');
+    backToLobby.size(90, 30);
+
+    backToLobby.mouseClicked(function(){
+        leavePasswordChange();
+        state = States.lobby;
+        createLobby();
+    });
+
+    changePWHolder = createElement('loginBox', '');
+
+    changePWName = createElement('loginName', 'Change PW');
+    changePWName.parent(changePWHolder);
+
+    changePWPasswordField = createElement('input', '');
+    changePWPasswordField.attribute('placeholder', 'Old Password...');
+    changePWPasswordField.attribute('type', 'password');
+    changePWPasswordField.parent(changePWHolder);
+
+    changePWNewPasswordField = createElement('input', '');
+    changePWNewPasswordField.attribute('placeholder', 'New Password...');
+    changePWNewPasswordField.attribute('type', 'password');
+    changePWNewPasswordField.parent(changePWHolder);
+
+    changePWConfirmNewPasswordField = createElement('input', '');
+    changePWConfirmNewPasswordField.attribute('placeholder', 'Confirm New Password...');
+    changePWConfirmNewPasswordField.attribute('type', 'password');
+    changePWConfirmNewPasswordField.parent(changePWHolder);
+
+    changePWConfirmButton = createButton('Confirm');
+    changePWConfirmButton.size(160, 30);
+    changePWConfirmButton.parent(changePWHolder);
+
+    errorText = createElement('errorText', '');
+    errorText.size(windowWidth / 2, 100);
+
+    successText = createElement('successText', '');
+    successText.size(windowWidth / 2, 100);
+
+    changePWConfirmButton.mouseClicked(function(){
+        errorText.html('');
+        successText.html('');
+        if (changePWNewPasswordField.value() == changePWConfirmNewPasswordField.value())
+        {
+            socket.emit('changePW', {
+                pw: changePWPasswordField.value(), 
+                newPw: changePWNewPasswordField.value()
+            });
+        }
+        else
+        {
+            failedLogin(2);
+        }
+        changePWNewPasswordField.html('');
+        changePWConfirmNewPasswordField.html('');
+    });
+
+    windowResized();
+}
+
 function createChatRoom()
 {
     textInputField = createElement('textarea', '');
@@ -252,15 +342,28 @@ function createChatRoom()
     windowResized();
 }
 
-function attemptUsername() //TODO: Don't allow all usernames
+function attemptGuest()
 {
     tempUsername = guestUsernameField.value();
     socket.emit('init', tempUsername);
     guestUsernameField.value('');
 }
 
-function attemptRegister() //TODO: Don't allow all usernames
+function attemptLogin() 
 {
+    errorText.html('');
+    tempUsername = loginUsernameField.value();
+    socket.emit('login', {
+        un: tempUsername,
+        pw: loginPasswordField.value()
+    });
+    loginUsernameField.value('');
+    loginPasswordField.value('');
+}
+
+function attemptRegister() 
+{
+    errorText.html('');
     if (registerPasswordField.value() == registerConfirmPasswordField.value())
     {
         tempUsername = registerUsernameField.value();
@@ -308,6 +411,10 @@ function failedLogin(data)
     {
         errorText.html('Password invalid. Length must be between 6 and 64 (inclusive). Only base ASCII characters.')
     }
+    else if (data == 4)
+    {
+        errorText.html('Login invalid, please try again.')
+    }
 }
 
 function leaveMain()
@@ -338,6 +445,8 @@ function leaveMain()
 function leaveLobby()
 {
     logout.remove();
+    changePassword.remove();
+
     nameText.remove();
 
     aButton.remove();
@@ -349,6 +458,18 @@ function leaveLobby()
     bText.remove();
     cText.remove();
     dText.remove();
+}
+
+function leavePasswordChange()
+{
+    backToLobby.remove();
+    successText.remove();
+
+    changePWHolder.remove();
+    changePWName.remove();
+    changePWPasswordField.remove();
+    changePWNewPasswordField.remove();
+    changePWConfirmButton.remove();
 }
 
 function leaveRoom()
@@ -406,7 +527,8 @@ function windowResized()
     }
     else if (state == States.lobby)
     {
-        logout.position(windowWidth - 100, 8);
+        logout.position(windowWidth - 98, 8);
+        changePassword.position(windowWidth - 198, windowHeight - 38);
         nameText.position(0,0);
 
         aButton.position(windowWidth / 6, (windowHeight / 5) * 1 - 30);
@@ -427,6 +549,28 @@ function windowResized()
         bText.size((windowWidth / 3) * 2, 60);
         cText.size((windowWidth / 3) * 2, 60);
         dText.size((windowWidth / 3) * 2, 60);
+    }
+    else if (state == States.changePw)
+    {
+        backToLobby.position(windowWidth - 98, 8);
+
+        changePWHolder.position(windowWidth * 0.333 + 6, 60);
+        changePWName.size(changePWHolder.size().width - 24, 50);
+        changePWName.position(0, 0);
+
+        changePWPasswordField.size(changePWHolder.size().width - 48, 50);
+        changePWPasswordField.position(12, 62);
+
+        changePWNewPasswordField.size(changePWHolder.size().width - 48, 50);
+        changePWNewPasswordField.position(12, 62 + 12 + 50);
+
+        changePWConfirmNewPasswordField.size(changePWHolder.size().width - 48, 50);
+        changePWConfirmNewPasswordField.position(12, 62 + 12 + 50 + 12 + 50);
+
+        changePWConfirmButton.position((changePWHolder.size().width - 160) / 2, changePWHolder.size().height - 50);
+
+        errorText.position(windowWidth / 4, windowHeight - 110);
+        successText.position(windowWidth / 4, windowHeight - 110);
     }
     else if (state == States.room)
     {
@@ -452,9 +596,10 @@ function fullScroll()
 function updateUserList(data)
 {
     userList.html("<i>User List:</i>");
+
     for (let i = 0; i < data.length; i++)
     {
-        userList.html("\n\n" + data[i], true);
+        userList.html("\n\n" + getNameSpanner(data[i].rank) + data[i].un + "</span>", true);
     }
     userList.html("\n ", true);
 }
@@ -469,18 +614,18 @@ function addChatMessage(data)
     {
         lastMessageTimeStamp = data.timeStamp;
         lastPrintedMessageTimeStamp = data.timeStamp;
-        chatBox.html("\n\n" + data.time + " - <b>" + getNameSpanner(data.username) + data.username + "</span></b>:\n" + getMessageSpanner(data.username) + data.message + "</span>\n ", true);
+        chatBox.html("\n\n" + data.time + " - <b>" + getNameSpanner(data.rank) + data.username + "</span></b>:\n" + getMessageSpanner(data.rank) + data.message + "</span>\n ", true);
     }
     else
     {
         lastMessageTimeStamp = data.timeStamp;
         if (lastChatName != data.username)
         {
-            chatBox.html("\n\n&nbsp;&nbsp;&nbsp;&nbsp;<b>" + getNameSpanner(data.username) + data.username + "</span></b>:\n" + getMessageSpanner(data.username) + data.message + "</span>\n ", true);
+            chatBox.html("\n\n&nbsp;&nbsp;&nbsp;&nbsp;<b>" + getNameSpanner(data.rank) + data.username + "</span></b>:\n" + getMessageSpanner(data.rank) + data.message + "</span>\n ", true);
         }
         else
         {
-            chatBox.html("\n" + getMessageSpanner(data.username) + data.message + "</span>\n ", true);
+            chatBox.html("\n" + getMessageSpanner(data.rank) + data.message + "</span>\n ", true);
         }
     }
 
@@ -492,14 +637,54 @@ function addChatMessage(data)
     }
 }
 
-function getNameSpanner(un) // used for rank colours
+function getNameSpanner(rank) // used for rank colours
 {
-    return '<span class="name">';
+    if (rank == 'admin')
+    {
+        return '<span class="adminName">[ADMIN] ';
+    }
+    if (rank == 'mod')
+    {
+        return '<span class="modName">[MOD] ';
+    }
+    if (rank == 'plus')
+    {
+        return '<span class="plusName">[+] ';
+    }
+    if (rank == 'plusplus')
+    {
+        return '<span class="plusPlusName">[++] ';
+    }
+    if (rank == 'guest')
+    {
+        return '<span class="guestName">';
+    }
+    return '<span class="baseName">';
 }
 
-function getMessageSpanner(un) // used for rank colours
+function getMessageSpanner(rank) // used for rank colours
 {
-    return '<span class="text">';
+    if (rank == 'admin')
+    {
+        return '<span class="adminText">';
+    }
+    if (rank == 'mod')
+    {
+        return '<span class="modText">';
+    }
+    if (rank == 'plus')
+    {
+        return '<span class="plusText">';
+    }
+    if (rank == 'plusplus')
+    {
+        return '<span class="plusPlusText">';
+    }
+    if (rank == 'guest')
+    {
+        return '<span class="guestText">';
+    }
+    return '<span class="baseText">';
 }
 
 function addChatAnnouncement(data)

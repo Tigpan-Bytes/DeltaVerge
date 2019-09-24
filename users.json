@@ -1,3 +1,22 @@
 {
-    
+  "Yoop": {
+    "hash": "$2b$12$Mk8hLhmvpdXbqXI58.NSk.koQ9wD/hjx6iN9GNEFicVoKM4uJ/I0i",
+    "rank": "plus"
+  },
+  "Tigpan": {
+    "hash": "$2b$12$KZw0c2nyaSjunHOH1HeegeSBhtf4wt6zQpqx0I8DBZLmf/nb50gjW",
+    "rank": "admin"
+  },
+  "Pooy": {
+    "hash": "$2b$12$4KRMPAgLDLBEQzPa0n768ulkhy20xwmPUdRi5E1UQy/oXGbp9KngO",
+    "rank": "plusplus"
+  },
+  "tiggy02": {
+    "hash": "$2b$12$XCTEs4pCTD.iJeKLR30cH.lE62xcVlsSZ34tOsTv3B/Mqo6pjbrfa",
+    "rank": "mod"
+  },
+  "Testing": {
+    "hash": "$2b$12$meAWqFOINFZQ.F1x74sdeuGS3mMC8F02qq.9rzP3VStmR7VIqTlwi",
+    "rank": "reg"
+  }
 }
