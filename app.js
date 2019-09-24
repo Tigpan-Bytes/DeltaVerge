@@ -17,7 +17,7 @@ const fs = require('fs');
 const bcrypt = require('bcrypt'); //https://www.npmjs.com/package/bcrypt
 
 let userData = fs.readFileSync('users.json');//TODO: Make registering, saving, and loading of accounts
-let users = JSON.parse(userData);  //dictionary username:hash
+let users = JSON.parse(userData);  //dictionary username:{hash,rank}
 
 let app = express();
 let serv = require('http').Server(app);
@@ -52,12 +52,32 @@ io.sockets.on('connection', function (socket) {
 		{
 			if (isUsernameFree(data))
 			{
-				sendRoomLists(socket);
-				socket.emit('acceptedUN');
+				initilize(socket, data);
+			}
+			else
+			{
+				socket.emit('failedUN', 1);
+			}
+		}
+		else
+		{
+			socket.emit('failedUN', 0);
+		}
+	});
 
-				console.log('Client Initilized: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Username: " + data + " | Time: " + getSuperTime(new Date()));
-				chatterList[socket.id] = new Chatter(socket.id);
-				chatterList[socket.id].name = data;
+	socket.on('register', function(data){
+		if (isAllowedUsername(data.un))
+		{
+			if (isUsernameFree(data.un))
+			{
+				if (isAllowedPassword(data.pw))
+				{
+					initilize(socket, data.un);
+				}
+				else
+				{
+					socket.emit('failedUN', 3);
+				}
 			}
 			else
 			{
@@ -73,28 +93,31 @@ io.sockets.on('connection', function (socket) {
 	socket.on('room', function(data){
 		if (usableRoom(data))
 		{
-			console.log('Client Changed Room: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Username: " + chatterList[socket.id].name + " | Room: " + data +  " | Time: " + getSuperTime(new Date()));
-			chatterList[socket.id].room = data;
-			
-			let date = new Date();
-			let pack = {
-				spanner: '<span style="color: #080;">',
-				time: getTime(date),
-				timeStamp: date.getTime(),
-				username: chatterList[socket.id].name,
-				message: " has Connected!",
-			};
-		
-			for (let i in chatterList) 
+			if (socket.id in chatterList)
 			{
-				let tempSocket = socketList[i];
-				if (chatterList[i].room == data)
+				console.log('Client Changed Room: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Username: " + chatterList[socket.id].name + " | Room: " + data +  " | Time: " + getSuperTime(new Date()));
+				chatterList[socket.id].room = data;
+				
+				let date = new Date();
+				let pack = {
+					spanner: '<span style="color: #080;">',
+					time: getTime(date),
+					timeStamp: date.getTime(),
+					username: chatterList[socket.id].name,
+					message: " has Connected!",
+				};
+			
+				for (let i in chatterList) 
 				{
-					tempSocket.emit('newChatAnnouncement', pack);
+					let tempSocket = socketList[i];
+					if (chatterList[i].room == data)
+					{
+						tempSocket.emit('newChatAnnouncement', pack);
+					}
 				}
-			}
 
-			updateUserList();
+				updateUserList();
+			}
 		}
 	});
 
@@ -140,27 +163,40 @@ io.sockets.on('connection', function (socket) {
 	});
 
 	socket.on('chat', function(data){
-		let date = new Date();
-		let pack = {
-			time: getTime(date),
-			timeStamp: date.getTime(),
-			username: chatterList[socket.id].name,
-			message: cleanseMessage(data),
-		};
-
-		console.log(pack.time + " - " + chatterList[socket.id].room + " - " + pack.username + ": " + pack.message);
-
-		for (let i in chatterList) 
+		if (socket.id in chatterList)
 		{
-			let tempSocket = socketList[i];
+			let date = new Date();
+			let pack = {
+				time: getTime(date),
+				timeStamp: date.getTime(),
+				username: chatterList[socket.id].name,
+				message: cleanseMessage(data),
+			};
 
-			if (chatterList[socket.id].room == chatterList[i].room)
+			console.log(pack.time + " - " + chatterList[socket.id].room + " - " + pack.username + ": " + pack.message);
+
+			for (let i in chatterList) 
 			{
-				tempSocket.emit('newChatMessage', pack);
+				let tempSocket = socketList[i];
+
+				if (chatterList[socket.id].room == chatterList[i].room)
+				{
+					tempSocket.emit('newChatMessage', pack);
+				}
 			}
 		}
 	});
 });
+
+function initilize(socket, un)
+{
+	sendRoomLists(socket);
+	socket.emit('acceptedUN');
+
+	chatterList[socket.id] = new Chatter(socket.id);
+	chatterList[socket.id].name = un;
+	console.log('Client Initilized: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Username: " + chatterList[socket.id].name + " | Time: " + getSuperTime(new Date()));
+}
 
 function usableRoom(room)
 {
@@ -197,6 +233,26 @@ function isUsernameFree(un)
 	for (let i in chatterList) 
 	{
 		if (chatterList[i].name == un)
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+function isAllowedPassword(un)
+{
+	if (un.length < 6 || un.length > 64)
+	{
+		return false;
+	}
+
+	for (let i = 0; i < un.length; i++)
+	{
+		let code = un.charCodeAt(i);
+
+		if (code >= 128)
 		{
 			return false;
 		}

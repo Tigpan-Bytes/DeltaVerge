@@ -11,8 +11,26 @@ let cRoomCount = 0;
 let dRoomCount = 0;
 
 //main
-let usernameField;
-let confirmButton;
+let mainText;
+
+let guestHolder;
+let guestName;
+let guestUsernameField;
+let guestConfirmButton;
+
+let loginHolder;
+let loginName;
+let loginUsernameField;
+let loginPasswordField;
+let loginConfirmButton;
+
+let registerHolder;
+let registerName;
+let registerUsernameField;
+let registerPasswordField;
+let registerConfirmPasswordField;
+let registerConfirmButton;
+
 let errorText;
 
 //lobby
@@ -38,8 +56,8 @@ let lobbyButton;
 let resetFields = false;
 let lastMessageTimeStamp = null;
 let lastPrintedMessageTimeStamp = null;
-let threeMinutes = 180000;
-let tenMinutes = 600000;
+let noChatDisplayTime = 120000;
+let forceDisplayTime = 240000;
 
 let States = {
     main: 0,
@@ -58,8 +76,8 @@ function setup()
     socket.on('newChatMessage', addChatMessage);
     socket.on('newChatAnnouncement', addChatAnnouncement);
     socket.on('newUserList', updateUserList);
-    socket.on('acceptedUN', acceptedUsername);
-    socket.on('failedUN', failedUsername);
+    socket.on('acceptedUN', acceptedLogin);
+    socket.on('failedUN', failedLogin);
     socket.on('roomCounts', function(data){
         aRoomCount = data['a'];
         bRoomCount = data['b'];
@@ -78,15 +96,65 @@ function setup()
 
 function createMain()
 {
-    usernameField = createElement('input', '');
-    usernameField.attribute('placeholder', 'Username...');
+    guestHolder = createElement('loginBox', '');
+    mainText = createElement('welcome', 'Welcome to <b>Pictochat</b>! Login to advance.');
 
-    confirmButton = createButton('Login as Guest');
-    confirmButton.mouseClicked(attemptUsername)
-    confirmButton.size(160, 30);
+    guestName = createElement('loginName', 'Guest');
+    guestName.parent(guestHolder);
+
+    guestUsernameField = createElement('input', '');
+    guestUsernameField.attribute('placeholder', 'Guest Username...');
+    guestUsernameField.parent(guestHolder);
+
+    guestConfirmButton = createButton('Login as Guest');
+    guestConfirmButton.mouseClicked(attemptUsername)
+    guestConfirmButton.size(160, 30);
+    guestConfirmButton.parent(guestHolder);
+
+    loginHolder = createElement('loginBox', '');
+
+    loginName = createElement('loginName', 'Login');
+    loginName.parent(loginHolder);
+
+    loginUsernameField = createElement('input', '');
+    loginUsernameField.attribute('placeholder', 'Username...');
+    loginUsernameField.parent(loginHolder);
+
+    loginPasswordField = createElement('input', '');
+    loginPasswordField.attribute('placeholder', 'Password...');
+    loginPasswordField.parent(loginHolder);
+
+    loginConfirmButton = createButton('Login');
+    loginConfirmButton.mouseClicked(attemptUsername)
+    loginConfirmButton.size(160, 30);
+    loginConfirmButton.parent(loginHolder);
+
+    registerHolder = createElement('loginBox', '');
+
+    registerName = createElement('loginName', 'Register');
+    registerName.parent(registerHolder);
+
+    registerUsernameField = createElement('input', '');
+    registerUsernameField.attribute('placeholder', 'New Username...');
+    registerUsernameField.parent(registerHolder);
+
+    registerPasswordField = createElement('input', '');
+    registerPasswordField.attribute('placeholder', 'New Password...');
+    registerPasswordField.attribute('type', 'password');
+    registerPasswordField.parent(registerHolder);
+
+    registerConfirmPasswordField = createElement('input', '');
+    registerConfirmPasswordField.attribute('placeholder', 'Confirm New Password...');
+    registerConfirmPasswordField.attribute('type', 'password');
+    registerConfirmPasswordField.parent(registerHolder);
+
+    registerConfirmButton = createButton('Register');
+    registerConfirmButton.mouseClicked(attemptRegister)
+    registerConfirmButton.size(160, 30);
+    registerConfirmButton.parent(registerHolder);
 
     errorText = createElement('errorText', '');
-    errorText.size(windowWidth / 2, 1000);
+    errorText.size(windowWidth / 2, 100);
 
     windowResized();
 }
@@ -186,12 +254,34 @@ function createChatRoom()
 
 function attemptUsername() //TODO: Don't allow all usernames
 {
-    tempUsername = usernameField.value();
+    tempUsername = guestUsernameField.value();
     socket.emit('init', tempUsername);
-    usernameField.value('');
+    guestUsernameField.value('');
 }
 
-function acceptedUsername()
+function attemptRegister() //TODO: Don't allow all usernames
+{
+    if (registerPasswordField.value() == registerConfirmPasswordField.value())
+    {
+        tempUsername = registerUsernameField.value();
+        socket.emit('register', {
+            un: tempUsername,
+            pw: registerPasswordField.value()
+        });
+        registerUsernameField.value('');
+        registerPasswordField.value('');
+        registerConfirmPasswordField.value('');
+    }
+    else
+    {
+        registerPasswordField.value('');
+        registerConfirmPasswordField.value('');
+        
+        failedLogin(2);
+    }
+}
+
+function acceptedLogin()
 {
     username = tempUsername;
 
@@ -200,22 +290,48 @@ function acceptedUsername()
     createLobby();
 }
 
-function failedUsername(data)
+function failedLogin(data)
 {
     if (data == 0)
     {
         errorText.html('Username invalid. Length must be between 3 and 20 (inclusive). No special characters aside from _ and -.')
     }
-    else
+    else if (data == 1)
     {
         errorText.html('Username invalid. Username is already in use.')
+    }
+    else if (data == 2)
+    {
+        errorText.html('Passwords do not match.')
+    }
+    else if (data == 3)
+    {
+        errorText.html('Password invalid. Length must be between 6 and 64 (inclusive). Only base ASCII characters.')
     }
 }
 
 function leaveMain()
 {
-    usernameField.remove();
-    confirmButton.remove();
+    mainText.remove();
+
+    guestHolder.remove();
+    guestName.remove();
+    guestUsernameField.remove();
+    guestConfirmButton.remove();
+
+    loginHolder.remove();
+    loginName.remove();
+    loginUsernameField.remove();
+    loginPasswordField.remove();
+    loginConfirmButton.remove();
+
+    registerHolder.remove();
+    registerName.remove();
+    registerUsernameField.remove();
+    registerPasswordField.remove();
+    registerConfirmPasswordField.remove();
+    registerConfirmButton.remove();
+
     errorText.remove();
 }
 
@@ -248,8 +364,45 @@ function windowResized()
 {
     if (state == States.main)
     {
-        confirmButton.position(windowWidth / 2 - 50 - 24, 120);
-        errorText.position(windowWidth / 4, 190);
+        mainText.position(0,0);
+
+        guestHolder.position(6, 60);
+        guestName.size(guestHolder.size().width - 24, 50);
+        guestName.position(0, 0);
+
+        guestUsernameField.size(guestHolder.size().width - 48, 50);
+        guestUsernameField.position(12, 62);
+
+        guestConfirmButton.position((guestHolder.size().width - 160) / 2, guestHolder.size().height - 50);
+        
+        loginHolder.position(windowWidth * 0.333 + 6, 60);
+        loginName.size(loginHolder.size().width - 24, 50);
+        loginName.position(0, 0);
+
+        loginUsernameField.size(loginHolder.size().width - 48, 50);
+        loginUsernameField.position(12, 62);
+
+        loginPasswordField.size(loginHolder.size().width - 48, 50);
+        loginPasswordField.position(12, 62 + 12 + 50);
+
+        loginConfirmButton.position((loginHolder.size().width - 160) / 2, loginHolder.size().height - 50);
+
+        registerHolder.position(windowWidth * 0.667 + 6, 60);
+        registerName.size(registerHolder.size().width - 24, 50);
+        registerName.position(0, 0);
+
+        registerUsernameField.size(registerHolder.size().width - 48, 50);
+        registerUsernameField.position(12, 62);
+
+        registerPasswordField.size(registerHolder.size().width - 48, 50);
+        registerPasswordField.position(12, 62 + 12 + 50);
+
+        registerConfirmPasswordField.size(registerHolder.size().width - 48, 50);
+        registerConfirmPasswordField.position(12, 62 + 12 + 50 + 12 + 50);
+
+        registerConfirmButton.position((registerHolder.size().width - 160) / 2, registerHolder.size().height - 50);
+        
+        errorText.position(windowWidth / 4, windowHeight - 110);
     }
     else if (state == States.lobby)
     {
@@ -312,7 +465,7 @@ function addChatMessage(data)
 
     chatBox.html(chatBox.html().slice(0, chatBox.html().length - 3));
     //Put message in chatbox
-    if (lastMessageTimeStamp == null || data.timeStamp > lastMessageTimeStamp + threeMinutes || data.timeStamp > lastPrintedMessageTimeStamp + tenMinutes)
+    if (lastMessageTimeStamp == null || data.timeStamp > lastMessageTimeStamp + noChatDisplayTime || data.timeStamp > lastPrintedMessageTimeStamp + forceDisplayTime)
     {
         lastMessageTimeStamp = data.timeStamp;
         lastPrintedMessageTimeStamp = data.timeStamp;
