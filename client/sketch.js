@@ -2,6 +2,7 @@
 let socket;
 let username;
 let tempUsername;
+let tempRank;
 let room;
 let lastChatName;
 
@@ -184,19 +185,22 @@ function createLobby()
 {
     logout = createButton('Logout');
     logout.size(90, 30);
-    changePassword = createButton('Change Password');
-    changePassword.size(190, 30);
+    if (tempRank != 'guest')
+    {
+        changePassword = createButton('Change Password');
+        changePassword.size(190, 30);
+        changePassword.mouseClicked(function(){
+            leaveLobby();
+            state = States.changePw;
+            createPasswordChange();
+        });
+    }
 
     logout.mouseClicked(function(){
         socket.emit('deinit');
         leaveLobby();
         state = States.main;
         createMain();
-    });
-    changePassword.mouseClicked(function(){
-        leaveLobby();
-        state = States.changePw;
-        createPasswordChange();
     });
 
     nameText = createElement('welcome', 'Welcome, <b>' + username + '</b>, to Pictochat.');
@@ -384,8 +388,9 @@ function attemptRegister()
     }
 }
 
-function acceptedLogin()
+function acceptedLogin(data)
 {
+    tempRank = data;
     username = tempUsername;
 
     leaveMain();
@@ -413,7 +418,7 @@ function failedLogin(data)
     }
     else if (data == 4)
     {
-        errorText.html('Login invalid, please try again.')
+        errorText.html('Login invalid, please try again later.')
     }
 }
 
@@ -445,7 +450,10 @@ function leaveMain()
 function leaveLobby()
 {
     logout.remove();
-    changePassword.remove();
+    if (tempRank != 'guest')
+    {
+        changePassword.remove();
+    }
 
     nameText.remove();
 
@@ -528,7 +536,10 @@ function windowResized()
     else if (state == States.lobby)
     {
         logout.position(windowWidth - 98, 8);
-        changePassword.position(windowWidth - 198, windowHeight - 38);
+        if (tempRank != 'guest')
+        {
+            changePassword.position(windowWidth - 198, windowHeight - 38);
+        }
         nameText.position(0,0);
 
         aButton.position(windowWidth / 6, (windowHeight / 5) * 1 - 30);

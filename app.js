@@ -86,25 +86,41 @@ io.sockets.on('connection', function (socket) {
 	socket.on('login', function(data){
 		if (data.un in users)
 		{
-			bcrypt.compare(data.pw, users[data.un].hash, function(err, res){
-				if (err)
+			let exists = false;
+			for (let i in chatterList)
+			{
+				if (chatterList[i].name == data.un)
 				{
-					console.error(err);
-					socket.emit('failedUN', 4);
+					exists = true;
+					break;
 				}
-				else
-				{
-					if (res)
+			}
+			if (!exists)
+			{
+				bcrypt.compare(data.pw, users[data.un].hash, function(err, res){
+					if (err)
 					{
-						console.log('Client Logged In: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Username: " + data.un + " | Rank: " + users[data.un].rank + " | Time: " + getSuperTime(new Date()));
-						initilize(socket, data.un, users[data.un].rank);
+						console.error(err);
+						socket.emit('failedUN', 4);
 					}
 					else
 					{
-						socket.emit('failedUN', 4);
+						if (res)
+						{
+							console.log('Client Logged In: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Username: " + data.un + " | Rank: " + users[data.un].rank + " | Time: " + getSuperTime(new Date()));
+							initilize(socket, data.un, users[data.un].rank);
+						}
+						else
+						{
+							socket.emit('failedUN', 4);
+						}
 					}
-				}
-			});
+				});
+			}
+			else
+			{
+				socket.emit('failedUN', 4);
+			}
 		}
 		else
 		{
@@ -283,7 +299,7 @@ io.sockets.on('connection', function (socket) {
 	});
 
 	socket.on('chat', function(data){
-		if (socket.id in chatterList && typeof(data) == 'string')
+		if (!command(socket, data) && socket.id in chatterList && typeof(data) == 'string')
 		{
 			let date = new Date();
 			let pack = {
@@ -313,15 +329,51 @@ catch (err)
 {
 	console.error(err);
 }
-finally
-{
 
+function command(socket, message)
+{
+	let chatter = chatterList[socket.id];
+	if (chatter.rank != 'admin' && chatter.rank != 'mod')
+	{
+		return false;
+	}
+	if (message[0] == '/')
+	{
+		message = message.substr(1);
+		let words = message.split(' ');
+		if (words.length == 3 && words[0] == 'rank')
+		{
+			if (words[1] in users)
+			{
+				users[words[1]].rank = words[2];
+				let room = 'a';
+				for (let i in chatterList) 
+				{
+					if (chatterList[i].name == words[1])
+					{
+						chatterList[i].rank = words[2];
+						room = chatterList[i].room;
+					}
+				}
+				fs.writeFile('users.json', JSON.stringify(users, null, 2), function(err){
+					if (err)
+					{
+						console.error(err);
+					}
+				});
+				updateRoomList(room);
+				console.log('COMMAND: ' + chatter.name + ' - [' + chatter.rank +'] Changed user ' + words[1] + "'s rank to " + words[2]+ " | Time: " + getSuperTime(new Date()));
+				return true;
+			}
+		}
+	}
+	return false;
 }
 
 function initilize(socket, un, rk)
 {
 	sendRoomLists(socket);
-	socket.emit('acceptedUN');
+	socket.emit('acceptedUN', rk);
 
 	chatterList[socket.id] = new Chatter(socket.id);
 	chatterList[socket.id].name = un;
