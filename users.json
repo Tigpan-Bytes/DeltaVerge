@@ -1,8 +1,4 @@
 {
-  "Yoop": {
-    "hash": "$2b$12$Mk8hLhmvpdXbqXI58.NSk.koQ9wD/hjx6iN9GNEFicVoKM4uJ/I0i",
-    "rank": "plusplus"
-  },
   "Tigpan": {
     "hash": "$2b$12$KZw0c2nyaSjunHOH1HeegeSBhtf4wt6zQpqx0I8DBZLmf/nb50gjW",
     "rank": "admin"
@@ -17,6 +13,30 @@
   },
   "Testing": {
     "hash": "$2b$12$meAWqFOINFZQ.F1x74sdeuGS3mMC8F02qq.9rzP3VStmR7VIqTlwi",
+    "rank": "reg"
+  },
+  "PapaScorch": {
+    "hash": "$2b$12$lC0q68bjjFRrXw36/Ud8meZvm.S9hNCuUCXjwxdVu1gJbUXnyikmq",
+    "rank": "reg"
+  },
+  "shj": {
+    "hash": "$2b$12$UFZEbt/YAtjV1V9pA.ZGS.qb70tR502PHDxyrECa3JIFzMANQqWey",
+    "rank": "reg"
+  },
+  "Medkit": {
+    "hash": "$2b$12$wLYbTlH4zhDVuR.YAK1LS.qmdtXzhx5bK92JakQHW8h/Xoq5kvJWG",
+    "rank": "reg"
+  },
+  "TestRankUp": {
+    "hash": "$2b$12$iasRKwG0AGxfAoDEwRuFUuDDVO5j0.qmUCod91hX26hbP.a4P/g4O",
+    "rank": "plus"
+  },
+  "NabRah": {
+    "hash": "$2b$12$9YpKnj0H8mApcR77tVhPhev/mBjtC20.Dxeemq/fh02pdZu.K9afa",
+    "rank": "reg"
+  },
+  "awesomeweirdo": {
+    "hash": "$2b$12$5tF/UOxflRWyocg36lnSDOgIxsJWayJuqN0R/arYhHsdkhng7/8Se",
     "rank": "reg"
   }
 }

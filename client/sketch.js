@@ -102,17 +102,23 @@ function setup()
         dRoomCount = data['d'];
     });
     socket.on('connect', function(){
-        if (state == States.room) { leaveRoom(); }
-        if (state == States.lobby) { leaveLobby(); }
-        if (state == States.changePw) { leavePasswordChange(); }
-        if (state != States.main) { createMain(); }
+        kill();
         socket.emit('deinit');
-        state = States.main;
-        windowResized();
     });
+    socket.on('kill', kill);
     socket.on('pwSuccess', function(){
         successText.html('Password change was successful.');
     });
+}
+
+function kill()
+{
+    if (state == States.room) { leaveRoom(); }
+    if (state == States.lobby) { leaveLobby(); }
+    if (state == States.changePw) { leavePasswordChange(); }
+    if (state != States.main) { createMain(); }
+    state = States.main;
+    windowResized();
 }
 
 function createMain()

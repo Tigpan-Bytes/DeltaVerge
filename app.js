@@ -366,6 +366,51 @@ function command(socket, message)
 				return true;
 			}
 		}
+		else if (words.length == 2 && words[0] == 'delete')
+		{
+			let deleted = null;
+			for (let i in chatterList) 
+			{
+				if (chatterList[i].name == words[1])
+				{
+					deleted = chatterList[i];
+				}
+			}
+
+			if (deleted != null)
+			{	
+				socketList[deleted.id].emit('kill');
+				announceDisconnect(deleted);
+
+				delete chatterList[deleted.id];
+				if (words[1] in users)
+				{
+					delete users[words[1]];
+
+					fs.writeFile('users.json', JSON.stringify(users, null, 2), function(err){
+						if (err)
+						{
+							console.error(err);
+						}
+					});
+				}
+
+				updateRoomList(chatter.room);
+				console.log('COMMAND: ' + chatter.name + ' - [' + chatter.rank +'] Deleted user account ' + words[1] + " | Time: " + getSuperTime(new Date()));
+				return true;
+			}
+			else if (words[1] in users)
+			{
+				delete users[words[1]];
+
+				fs.writeFile('users.json', JSON.stringify(users, null, 2), function(err){
+					if (err)
+					{
+						console.error(err);
+					}
+				});
+			}
+		}
 	}
 	return false;
 }
@@ -451,7 +496,7 @@ function isAllowedPassword(pw)
 	{
 		let code = pw.charCodeAt(i);
 
-		if (code >= 128 && code > 32)
+		if (code >= 128 || code <= 32)
 		{
 			return false;
 		}
