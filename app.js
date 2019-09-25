@@ -66,261 +66,319 @@ io.sockets.on('connection', function (socket) {
 	//socket.emit('resetClient');
 
 	socket.on('init', function(data){
-		if (isAllowedUsername(data))
+		if (typeof(data) == 'string')
 		{
-			if (isUsernameFree(data))
+			if (isAllowedUsername(data))
 			{
-				initilize(socket, data, "guest");
+				if (isUsernameFree(data))
+				{
+					initilize(socket, data, "guest");
+				}
+				else
+				{
+					socket.emit('failedUN', 1);
+				}
 			}
 			else
 			{
-				socket.emit('failedUN', 1);
+				socket.emit('failedUN', 0);
 			}
-		}
-		else
-		{
-			socket.emit('failedUN', 0);
 		}
 	});
 
 	socket.on('login', function(data){
-		if (data.un in users)
+		try
 		{
-			let exists = false;
-			for (let i in chatterList)
+			if (data.un in users)
 			{
-				if (chatterList[i].name == data.un)
+				let exists = false;
+				for (let i in chatterList)
 				{
-					exists = true;
-					break;
-				}
-			}
-			if (!exists)
-			{
-				bcrypt.compare(data.pw, users[data.un].hash, function(err, res){
-					if (err)
+					if (chatterList[i].name == data.un)
 					{
-						console.error(err);
-						socket.emit('failedUN', 4);
+						exists = true;
+						break;
 					}
-					else
-					{
-						if (res)
+				}
+				if (!exists)
+				{
+					bcrypt.compare(data.pw, users[data.un].hash, function(err, res){
+						if (err)
 						{
-							console.log('Client Logged In: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Username: " + data.un + " | Rank: " + users[data.un].rank + " | Time: " + getSuperTime(new Date()));
-							initilize(socket, data.un, users[data.un].rank);
+							console.error(err);
+							socket.emit('failedUN', 4);
 						}
 						else
 						{
-							socket.emit('failedUN', 4);
+							if (res)
+							{
+								console.log('Client Logged In: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Username: " + data.un + " | Rank: " + users[data.un].rank + " | Time: " + getSuperTime(new Date()));
+								initilize(socket, data.un, users[data.un].rank);
+							}
+							else
+							{
+								socket.emit('failedUN', 4);
+							}
 						}
-					}
-				});
+					});
+				}
+				else
+				{
+					socket.emit('failedUN', 4);
+				}
 			}
 			else
 			{
 				socket.emit('failedUN', 4);
 			}
 		}
-		else
+		catch (err)
 		{
-			socket.emit('failedUN', 4);
+			console.log("Login failed unexpectedly.");
 		}
 	});
 
 	socket.on('register', function(data){
-		if (isAllowedUsername(data.un))
+		try
 		{
-			if (isUsernameFree(data.un))
+			if (data != undefined && isAllowedUsername(data.un))
 			{
-				if (isAllowedPassword(data.pw))
+				if (isUsernameFree(data.un))
 				{
-					bcrypt.hash(data.pw, 12, function(err, hash){
-						if (err)
-						{
-							console.error(err);
-						}
-						else
-						{
-							users[data.un] = {
-								hash: hash, 
-								rank: 'reg'
-							};
-							fs.writeFile('users.json', JSON.stringify(users, null, 2), function(err){
-								if (err)
-								{
-									console.error(err);
-								}
-							});
-						}
-					});
-					console.log('Client Registered Account: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Username: " + data.un + " | Time: " + getSuperTime(new Date()));
-					initilize(socket, data.un, "reg");
+					if (isAllowedPassword(data.pw))
+					{
+						bcrypt.hash(data.pw, 12, function(err, hash){
+							if (err)
+							{
+								console.error(err);
+							}
+							else
+							{
+								users[data.un] = {
+									hash: hash, 
+									rank: 'reg'
+								};
+								fs.writeFile('users.json', JSON.stringify(users, null, 2), function(err){
+									if (err)
+									{
+										console.error(err);
+									}
+								});
+							}
+						});
+						console.log('Client Registered Account: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Username: " + data.un + " | Time: " + getSuperTime(new Date()));
+						initilize(socket, data.un, "reg");
+					}
+					else
+					{
+						socket.emit('failedUN', 3);
+					}
 				}
 				else
 				{
-					socket.emit('failedUN', 3);
+					socket.emit('failedUN', 1);
 				}
 			}
 			else
 			{
-				socket.emit('failedUN', 1);
+				socket.emit('failedUN', 0);
 			}
 		}
-		else
+		catch (err)
 		{
-			socket.emit('failedUN', 0);
+			console.log("Register failed unexpectedly.");
 		}
 	});
 
 	socket.on('changePW', function(data){
-		if (isAllowedPassword(data.newPw))
+		try
 		{
-			if (chatterList[socket.id].name in users)
+			if (data != undefined && isAllowedPassword(data.newPw))
 			{
-				bcrypt.compare(data.pw, users[chatterList[socket.id].name].hash, function(err, res){
-					if (err)
-					{
-						console.error(err);
-						socket.emit('failedUN', 4);
-					}
-					else
-					{
-						if (res)
+				if (chatterList[socket.id].name in users)
+				{
+					bcrypt.compare(data.pw, users[chatterList[socket.id].name].hash, function(err, res){
+						if (err)
 						{
-							bcrypt.hash(data.newPw, 12, function(err, hash){
-								if (err)
-								{
-									console.error(err);
-								}
-								else
-								{
-									users[chatterList[socket.id].name].hash = hash;
-									fs.writeFile('users.json', JSON.stringify(users, null, 2), function(err){
-										if (err)
-										{
-											console.error(err);
-										}
-									});
-									console.log('Client Changed PW: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Username: " + chatterList[socket.id].name + " | Rank: " + users[chatterList[socket.id].name].rank + " | Time: " + getSuperTime(new Date()));
-									socket.emit('pwSuccess');
-								}
-							});
+							console.error(err);
+							socket.emit('failedUN', 4);
 						}
 						else
 						{
-							socket.emit('failedUN', 4);
+							if (res)
+							{
+								bcrypt.hash(data.newPw, 12, function(err, hash){
+									if (err)
+									{
+										console.error(err);
+									}
+									else
+									{
+										users[chatterList[socket.id].name].hash = hash;
+										fs.writeFile('users.json', JSON.stringify(users, null, 2), function(err){
+											if (err)
+											{
+												console.error(err);
+											}
+										});
+										console.log('Client Changed PW: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Username: " + chatterList[socket.id].name + " | Rank: " + users[chatterList[socket.id].name].rank + " | Time: " + getSuperTime(new Date()));
+										socket.emit('pwSuccess');
+									}
+								});
+							}
+							else
+							{
+								socket.emit('failedUN', 4);
+							}
 						}
-					}
-				});	
+					});	
+				}
+				else
+				{
+					socket.emit('failedUN', 4);
+				}	
 			}
 			else
 			{
-				socket.emit('failedUN', 4);
+				socket.emit('failedUN', 3);
 			}
-			
 		}
-		else
+		catch (err)
 		{
-			socket.emit('failedUN', 3);
+			console.log("ChangePW failed unexpectedly.");
 		}
 	});
 
 	socket.on('room', function(data){
-		if (typeof(data) == 'string' && usableRoom(data))
+		try
 		{
-			if (socket.id in chatterList)
+			if (typeof(data) == 'string' && usableRoom(data))
 			{
-				console.log('Client Changed Room: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Username: " + chatterList[socket.id].name + " | Room: " + data + " | Rank: " + chatterList[socket.id].rank + " | Time: " + getSuperTime(new Date()));
-				chatterList[socket.id].room = data;
-				
-				let date = new Date();
-				let pack = {
-					spanner: '<span style="color: #080;">',
-					time: getTime(date),
-					timeStamp: date.getTime(),
-					username: chatterList[socket.id].name,
-					message: " has Connected!",
-				};
-			
-				for (let i in chatterList) 
+				if (socket.id in chatterList)
 				{
-					let tempSocket = socketList[i];
-					if (chatterList[i].room == data)
+					console.log('Client Changed Room: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Username: " + chatterList[socket.id].name + " | Room: " + data + " | Rank: " + chatterList[socket.id].rank + " | Time: " + getSuperTime(new Date()));
+					chatterList[socket.id].room = data;
+					
+					let date = new Date();
+					let pack = {
+						spanner: '<span style="color: #080;">',
+						time: getTime(date),
+						timeStamp: date.getTime(),
+						username: chatterList[socket.id].name,
+						message: " has Connected!",
+					};
+				
+					for (let i in chatterList) 
 					{
-						tempSocket.emit('newChatAnnouncement', pack);
+						let tempSocket = socketList[i];
+						if (chatterList[i].room == data)
+						{
+							tempSocket.emit('newChatAnnouncement', pack);
+						}
 					}
-				}
 
-				updateUserList();
+					updateUserList();
+				}
 			}
+		}
+		catch (err)
+		{
+			console.log("Room Change failed unexpectedly.");
 		}
 	});
 
 	socket.on('deinit', function(){
-		if (socket.id in chatterList)
+		try
 		{
-			console.log('Client Deinitilized: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Time: " + getSuperTime(new Date()));
+			if (socket.id in chatterList)
+			{
+				console.log('Client Deinitilized: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Time: " + getSuperTime(new Date()));
 
-			announceDisconnect(chatterList[socket.id]);
+				announceDisconnect(chatterList[socket.id], "null");
 
-			delete chatterList[socket.id];
+				delete chatterList[socket.id];
+			}
+		}
+		catch (err)
+		{
+			console.log("DeInit failed unexpectedly.");
 		}
 	});
 
 	socket.on('leaveRoom', function(){
-		console.log('Client Left Room: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Username: " + chatterList[socket.id].name + " | Room: " + chatterList[socket.id].room + " | Rank: " + chatterList[socket.id].rank + " | Time: " + getSuperTime(new Date()));
-
-		if (socket.id in chatterList)
+		try
 		{
-			announceDisconnect(chatterList[socket.id]);
+			console.log('Client Left Room: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Username: " + chatterList[socket.id].name + " | Room: " + chatterList[socket.id].room + " | Rank: " + chatterList[socket.id].rank + " | Time: " + getSuperTime(new Date()));
 
-			chatterList[socket.id].room = "null";
+			if (socket.id in chatterList)
+			{
+				announceDisconnect(chatterList[socket.id], "null");
 
-			updateUserList();
+				chatterList[socket.id].room = "null";
+
+				updateUserList();
+			}
+		}
+		catch (err)
+		{
+			console.log("Leave Room failed unexpectedly.");
 		}
 	});
 
 	socket.on('disconnect', function(){
-		if (socket.id in socketList)
+		try
 		{
-			console.log('Client Disconnected: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Time: " + getSuperTime(new Date()));
-
-			if (socket.id in chatterList)
+			if (socket.id in socketList)
 			{
-				announceDisconnect(chatterList[socket.id]);
-			
-				delete chatterList[socket.id];
+				console.log('Client Disconnected: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Time: " + getSuperTime(new Date()));
 
-				updateUserList();
-			}
-			delete socketList[socket.id];
-		}					
+				if (socket.id in chatterList)
+				{
+					announceDisconnect(chatterList[socket.id], "null");
+				
+					delete chatterList[socket.id];
+
+					updateUserList();
+				}
+				delete socketList[socket.id];
+			}		
+		}		
+		catch (err)
+		{
+			console.log("Disconnect failed unexpectedly.");
+		}	
 	});
 
 	socket.on('chat', function(data){
-		if (!command(socket, data) && socket.id in chatterList && typeof(data) == 'string')
+		try
 		{
-			let date = new Date();
-			let pack = {
-				time: getTime(date),
-				timeStamp: date.getTime(),
-				rank: chatterList[socket.id].rank,
-				username: chatterList[socket.id].name,
-				message: cleanseMessage(data),
-			};
-
-			console.log(pack.time + " - " + chatterList[socket.id].room + " - [" + pack.rank + "] " + pack.username + ": " + pack.message);
-
-			for (let i in chatterList) 
+			if (!command(socket, data) && socket.id in chatterList && typeof(data) == 'string')
 			{
-				let tempSocket = socketList[i];
+				let date = new Date();
+				let pack = {
+					time: getTime(date),
+					timeStamp: date.getTime(),
+					rank: chatterList[socket.id].rank,
+					username: chatterList[socket.id].name,
+					message: cleanseMessage(data),
+				};
 
-				if (chatterList[socket.id].room == chatterList[i].room)
+				console.log(pack.time + " - " + chatterList[socket.id].room + " - [" + pack.rank + "] " + pack.username + ": " + pack.message);
+
+				for (let i in chatterList) 
 				{
-					tempSocket.emit('newChatMessage', pack);
+					let tempSocket = socketList[i];
+
+					if (chatterList[socket.id].room == chatterList[i].room)
+					{
+						tempSocket.emit('newChatMessage', pack);
+					}
 				}
 			}
+		}
+		catch (err)
+		{
+			console.log("Chat failed unexpectedly.");
 		}
 	});
 });
@@ -343,8 +401,17 @@ function command(socket, message)
 		let words = message.split(' ');
 		if (words.length == 3 && words[0] == 'rank')
 		{
+			if ((words[2] == 'admin' || words[2] == 'mod') && chatter.rank != 'admin')
+			{
+				return false;
+			}
+
 			if (words[1] in users)
 			{
+				if (users[words[1]].rank == 'admin')
+				{
+					return false;
+				}
 				users[words[1]].rank = words[2];
 				let room = 'a';
 				for (let i in chatterList) 
@@ -362,7 +429,27 @@ function command(socket, message)
 					}
 				});
 				updateRoomList(room);
-				console.log('COMMAND: ' + chatter.name + ' - [' + chatter.rank +'] Changed user ' + words[1] + "'s rank to " + words[2]+ " | Time: " + getSuperTime(new Date()));
+								
+				let date = new Date();
+				console.log('COMMAND: ' + chatter.name + ' - [' + chatter.rank +'] Changed user ' + words[1] + "'s rank to " + words[2]+ " | Time: " + getSuperTime(date));
+
+				let pack = {
+					spanner: '<span style="color: #004;">',
+					time: getTime(date),
+					timeStamp: date.getTime(),
+					username: words[1],
+					message: " has had their rank changed by " + chatter.name + "!",
+				};
+		
+				for (let i in chatterList) 
+				{
+					let tempSocket = socketList[i];
+					if (chatter.room == chatterList[i].room)
+					{
+						tempSocket.emit('newChatAnnouncement', pack);
+					}
+				}
+
 				return true;
 			}
 		}
@@ -379,8 +466,12 @@ function command(socket, message)
 
 			if (deleted != null)
 			{	
+				if (deleted.rank == 'admin')
+				{
+					return false;
+				}
 				socketList[deleted.id].emit('kill');
-				announceDisconnect(deleted);
+				announceDisconnect(deleted, "delete");
 
 				delete chatterList[deleted.id];
 				if (words[1] in users)
@@ -401,6 +492,10 @@ function command(socket, message)
 			}
 			else if (words[1] in users)
 			{
+				if (users[words[1]].rank == 'admin')
+				{
+					return false;
+				}
 				delete users[words[1]];
 
 				fs.writeFile('users.json', JSON.stringify(users, null, 2), function(err){
@@ -505,16 +600,30 @@ function isAllowedPassword(pw)
 	return true;
 }
 
-function announceDisconnect(chatter)
+function announceDisconnect(chatter, special)
 {
 	let date = new Date();
-	let pack = {
-		spanner: '<span style="color: #800;">',
-		time: getTime(date),
-		timeStamp: date.getTime(),
-		username: chatter.name,
-		message: " has Disconnected.",
-	};
+	let pack;
+	if (special == 'delete')
+	{
+		pack = {
+			spanner: '<span style="color: #f00;">',
+			time: getTime(date),
+			timeStamp: date.getTime(),
+			username: chatter.name,
+			message: " was struck with the Almighty Banhammer!",
+		};
+	}
+	else
+	{
+		pack = {
+			spanner: '<span style="color: #800;">',
+			time: getTime(date),
+			timeStamp: date.getTime(),
+			username: chatter.name,
+			message: " has Disconnected.",
+		};
+	}
 
 	for (let i in chatterList) 
 	{
