@@ -67,6 +67,7 @@ let chatBox;
 let userList;
 let chatBoxHeight;
 let welcomeText;
+let typingText;
 let lobbyButton;
 
 let resetFields = false;
@@ -83,6 +84,8 @@ let States = {
 };
 
 let state = States.main;
+let lastMillis = 0;
+let typingMillis = 0;
 
 function setup()
 {
@@ -106,6 +109,31 @@ function setup()
         socket.emit('deinit');
     });
     socket.on('kill', kill);
+    socket.on('typing', function(data){
+        if (state == States.room)
+        {
+            if (data.length == 0)
+            {
+                typingText.html('Nobody is typing at the moment...');
+            }
+            else if (data.length == 1)
+            {
+                typingText.html('<span class="baseText">' + data[0] + '</span> is typing.');
+            }
+            else if (data.length == 2)
+            {
+                typingText.html('<span class="baseText">' + data[0] + '</span> and <span class="baseText">' + data[1] + '</span> are typing.');
+            }
+            else if (data.length == 3)
+            {
+                typingText.html('<span class="baseText">' + data[0] + '</span>, <span class="baseText">' + data[1] + '</span>, and <span class="baseText">' + data[2] + '</span> are typing.');
+            }
+            else
+            {
+                typingText.html('<span class="baseText">Several</span> people are typing.');
+            }
+        }
+    });
     socket.on('pwSuccess', function(){
         successText.html('Password change was successful.');
     });
@@ -333,6 +361,9 @@ function createChatRoom()
 {
     textInputField = createElement('textarea', '');
     textInputField.attribute('placeholder', 'Chat here...');
+    textInputField.input(sendTyping);
+
+    typingText = createElement('typing', 'Nobody is typing at the moment...');
 
     chatBox = createElement('chatbox', '<i>&nbsp;&nbsp;&nbsp;&nbsp;Welcome to <b>Room ' + room + '</b>! Type, then press enter to chat.</i>\n ');
     userList = createElement('listbox', '<i>User List:\n</i>');
@@ -491,6 +522,7 @@ function leaveRoom()
     textInputField.remove();
     chatBox.remove();
     userList.remove();
+    typingText.remove();
     welcomeText.remove();
     lobbyButton.remove();
 }
@@ -594,7 +626,8 @@ function windowResized()
         textInputField.position(0, windowHeight - (80 + 16));
         chatBox.position(0, 48);
         userList.position(windowWidth - 240, 48);
-        chatBoxHeight = windowHeight - 80 - 32 - 48 - 8; // 8 for border
+        chatBoxHeight = windowHeight - 80 - 32 - 48 - 8 - 24; // 8 for border
+        typingText.position(0, windowHeight - (80 + 16 + 32));
         welcomeText.position(0,0);
         lobbyButton.position(windowWidth - 180, 8);
     }
@@ -616,7 +649,7 @@ function updateUserList(data)
 
     for (let i = 0; i < data.length; i++)
     {
-        userList.html("\n\n" + getNameSpanner(data[i].rank) + data[i].un + "</span>", true);
+        userList.html("\n\n" + (data[i].active ? "● " : "◌ ") + getNameSpanner(data[i].rank) + data[i].un + "</span>", true);
     }
     userList.html("\n ", true);
 }
@@ -731,7 +764,19 @@ function draw()
         dText.html(dRoomCount + ' Chatters Active.');
     }
     else if (state == States.room)
-    {
+    {    
+        if (lastMillis < millis() - 1500)
+        {
+            lastMillis = millis();
+            socket.emit('status', focused)
+        }
+
+        if (typingMillis < millis() - 4000)
+        {
+            typingMillis = Infinity;
+            socket.emit('typing', false);
+        }
+        
         if (resetFields)
         {
             textInputField.value('');
@@ -742,6 +787,15 @@ function draw()
         {
             textInputField.value('');
         }
+    }
+}
+
+function sendTyping()
+{
+    if (keyCode != 13)
+    {
+        typingMillis = millis();
+        socket.emit('typing', true);
     }
 }
 

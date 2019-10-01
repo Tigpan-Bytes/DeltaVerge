@@ -1,4 +1,4 @@
-const port = 4444;
+const port = 80;
 
 class Chatter
 {
@@ -10,6 +10,8 @@ class Chatter
 		this.name = "null";
 		this.room = "null";
 		this.rank = "reg";
+		this.focused = true;
+		this.isTyping = false;
 	}
 }
 
@@ -249,6 +251,23 @@ io.sockets.on('connection', function (socket) {
 		}
 	});
 
+	socket.on('status', function(data){
+		try
+		{
+			if (typeof(data) == 'boolean')
+			{
+				if (socket.id in chatterList)
+				{
+					chatterList[socket.id].focused = data;
+				}
+			}
+		}
+		catch (err)
+		{
+			console.log("Status failed unexpectedly.");
+		}
+	});
+
 	socket.on('room', function(data){
 		try
 		{
@@ -349,6 +368,24 @@ io.sockets.on('connection', function (socket) {
 		}	
 	});
 
+	socket.on('typing', function(data){
+		try
+		{
+			if (typeof(data) == 'boolean')
+			{
+				if (socket.id in chatterList)
+				{
+					chatterList[socket.id].isTyping = data;
+					updateRoomTyping(chatterList[socket.id].room);
+				}
+			}
+		}
+		catch (err)
+		{
+			console.log("Typing failed unexpectedly.");
+		}
+	});
+
 	socket.on('chat', function(data){
 		try
 		{
@@ -362,6 +399,8 @@ io.sockets.on('connection', function (socket) {
 					username: chatterList[socket.id].name,
 					message: cleanseMessage(data),
 				};
+				chatterList[socket.id].isTyping = false;
+				updateRoomTyping(chatterList[socket.id].room);
 
 				console.log(pack.time + " - " + chatterList[socket.id].room + " - [" + pack.rank + "] " + pack.username + ": " + pack.message);
 
@@ -685,6 +724,7 @@ function updateRoomList(room)
 		if (chatterList[i].room == room)
 		{
 			pack.push({
+				active: chatterList[i].focused,
 				un: chatterList[i].name,
 				rank: chatterList[i].rank,
 			});
@@ -698,6 +738,29 @@ function updateRoomList(room)
 		if (chatterList[i].room == room)
 		{
 			socketList[i].emit('newUserList', pack);
+		}
+	}
+}
+
+function updateRoomTyping(room)
+{
+	let pack = [];
+	for (let i in chatterList)
+	{
+		if (chatterList[i].room == room)
+		{
+			if (chatterList[i].isTyping)
+			{
+				pack.push(chatterList[i].name);
+			}
+		}
+	}
+
+	for (let i in chatterList) 
+	{
+		if (chatterList[i].room == room)
+		{
+			socketList[i].emit('typing', pack);
 		}
 	}
 }
@@ -768,25 +831,10 @@ function getTime(date)
 	return hrs + ":" + mins + " AM";
 }
 
-/*
-setInterval(function () { //update/draw function
-	let pack = [];
-	for (let i in chatterList) 
-	{
-		let chatter = chatterList[i];
-		chatter.update();
-		pack.push({
-			x: chatter.x,
-			y: chatter.y,
-			id: chatter.id,
-		});
-	}
-	for (let i in socketList) 
-	{
-		let socket = socketList[i];
-		socket.emit('newPositions', pack);
-	}
-}, 1000 / 60); */
+
+setInterval(function () {
+	updateUserList();
+}, 1500 / 60); 
 
 
 //SUGAR SUGAR SUGAR SUGAR SUGAR SUGAR SUGAR SUGAR SUGAR

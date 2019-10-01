@@ -90,6 +90,14 @@ welcome {
     font-family: Arial, Helvetica, sans-serif;
 }
 
+typing {
+    font-size: 16px;
+    color: #444;
+    margin: 8px;
+    text-align: left;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
 loginName {
     font-size: 40px;
     color: #222;
@@ -122,7 +130,7 @@ textarea {
 chatbox {
     font-size: 18px;
     width: calc(100% - 16px - 240px);
-    height: calc(100% - 80px - 32px - 48px);
+    height: calc(100% - 80px - 32px - 48px - 24px);
     text-align:left;
     margin:8px 8px;
     padding:12px 12px;
@@ -138,7 +146,7 @@ chatbox {
 listbox {
     font-size: 18px;
     width: calc(240px - 16px);
-    height: calc(100% - 80px - 32px - 48px);
+    height: calc(100% - 80px - 32px - 48px - 24px);
     text-align:left;
     margin:8px 8px;
     padding:12px 12px;
