@@ -451,6 +451,10 @@ function command(socket, message)
 				{
 					return false;
 				}
+				if (words[2] == 'admin')
+				{
+					return false;
+				}
 				users[words[1]].rank = words[2];
 				let room = 'a';
 				for (let i in chatterList) 
