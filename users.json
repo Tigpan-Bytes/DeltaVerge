@@ -37,7 +37,7 @@
   },
   "ang_le_egg": {
     "hash": "$2b$12$KT9DTFmzwlijQbu5hk20Au7HFO1FO/XO3loc1nSOiHgNrr97P7yIK",
-    "rank": "reg"
+    "rank": "mod"
   },
   "AnuragS": {
     "hash": "$2b$12$PtUFf2wYCcwU85lcUmFuOOA1KC9CxDQTPE4xQj/aj7uyLTZdjvn6q",
@@ -59,20 +59,24 @@
     "hash": "$2b$12$2uEtMJ2lHUaw5LY7UdBTou6V3eGOfwNHCfBe6Lp1Fcqkep99nsxiO",
     "rank": "reg"
   },
-  "awesomeweirdo": {
-    "hash": "$2b$12$Be1sXOxlNxGP0ngewTYl1OQHJ933m9SQkbr6.yC2i8Ns2L0k/rq82",
-    "rank": "mod"
-  },
-  "NabRah": {
-    "hash": "$2b$12$L9V4eJXlgCCq587q4ZiyqeMjnHRkUVWNGoSblIS37jAXyTlRKZ.B2",
-    "rank": "mod"
-  },
   "schellenberg": {
     "hash": "$2b$12$o4L7uqBHb5zLBJbDfhjuH.NxwTp82tybLGyofZTp92JxTHJ6zdCfe",
     "rank": "reg"
   },
+  "muddya": {
+    "hash": "$2b$12$49Tt0DDHiJh90Nn7j5kiaelfmtkJ4vj.OiEzTAOMHbdypGFu8EwGO",
+    "rank": "reg"
+  },
+  "NootNoot": {
+    "hash": "$2b$12$J1rmzrQZtlvWJeCMgvBDhOB16Slsxch3LTIMxykF/jcNAsXhzq79C",
+    "rank": "reg"
+  },
+  "NabRah": {
+    "hash": "$2b$12$VnNBzja0nYQRYcaCWheLYOEjNrc2xRkpj81gNFDEu2b161svuclCW",
+    "rank": "plusplus"
+  },
   "Anu": {
-    "hash": "$2b$12$u2CVCehpdKKZZeNf.msliuYAcURkYV5MKc3P7v/KwCYXzNg/W/Cfy",
-    "rank": "mod"
+    "hash": "$2b$12$QI.8JRp4w8dS8u5jXo5NAuXuYIvGLqZhDyk6MsMbHP0o.Ve5dPNzi",
+    "rank": "plusplus"
   }
 }
