@@ -77,6 +77,7 @@ let cancelPictureButton;
 let sendPictureButton;
 
 let pictureCanvas;
+let pictureImage;
 
 let resetFields = false;
 let lastMessageTimeStamp = null;
@@ -402,6 +403,9 @@ function createChatRoom()
                 cancelPictureButton.remove();
                 sendPictureButton.remove();
                 background.remove();
+
+                pictureCanvas.remove();
+                pictureImage.remove();
             });
             cancelPictureButton.size(120, 40);
             cancelPictureButton.style('font-size', '22px');
@@ -416,6 +420,9 @@ function createChatRoom()
                 cancelPictureButton.remove();
                 sendPictureButton.remove();
                 background.remove();
+
+                pictureCanvas.remove();
+                pictureImage.remove();
             });
             sendPictureButton.size(120, 40);
             sendPictureButton.style('font-size', '22px');
@@ -430,6 +437,19 @@ function createChatRoom()
             pictureCanvas = createCanvas(pictureWidth, pictureHeight);
             pictureCanvas.attribute('id', 'canv')
             pictureCanvas.parent(background);
+
+            pictureImage = createImage(pictureWidth, pictureHeight);
+            pictureImage.loadPixels();
+            for (let x = 0; x < pictureImage.width; x++) 
+            {
+                for (let y = 0; y < pictureImage.height; y++) 
+                {
+                    let a = map(y, 0, pictureImage.height, 255, 0);
+                    pictureImage.set(x, y, [0, 153, 204, a]);
+                }
+            }
+            pictureImage.set(30, 30, [255, 0, 0, 0]);
+            pictureImage.updatePixels();
 
             windowResized();
         }
@@ -723,8 +743,13 @@ function windowResized()
         {
             cancelPictureButton.position(8, windowHeight - 40 - 8);
             sendPictureButton.position(windowWidth - 120 - 8, windowHeight - 40 - 8);
+
+            let xMod = (windowWidth - 60) / pictureWidth;
+            let yMod = (windowHeight - 90) / pictureHeight;
+            let multi = xMod < yMod ? xMod : yMod;
+            resizeCanvas(pictureWidth * multi, pictureHeight * multi);
             
-            pictureCanvas.position(windowWidth / 2 - pictureWidth / 2, windowHeight / 2 - 20 - pictureHeight / 2);
+            pictureCanvas.position(windowWidth / 2 - width / 2, windowHeight / 2 - 20 - height / 2);
         }
     }
 }
@@ -887,9 +912,18 @@ function draw()
         if (isDrawingOpen)
         {
             pictureCanvas.background(147);
-            fill(0);
-            ellipse(25, 25, 50, 50);
-            text('Sorry. still in development. Click send or cancel to leave this screen.', 0, 50, 200, 200);
+            if (mouseIsPressed)
+            {
+                let realX = mouseX - pictureCanvas.position().x;
+                let realY = mouseY - pictureCanvas.position().y;
+                if (realX >= 0 && realY >= 0 && realX <= pictureCanvas.width && realY <= pictureCanvas.height)
+                {
+                    pictureImage.loadPixels();
+                    pictureImage.set(floor(realX), floor(realY), [0, 0, 0, 255]);
+                    pictureImage.updatePixels();
+                }
+            }
+            image(pictureImage, 0, 0, pictureCanvas.width, pictureCanvas.height);
         }
     }
 }
