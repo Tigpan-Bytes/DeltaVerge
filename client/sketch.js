@@ -63,12 +63,20 @@ let successText;
 
 //room
 let textInputField;
+let pictureButton;
 let chatBox;
 let userList;
 let chatBoxHeight;
 let welcomeText;
 let typingText;
 let lobbyButton;
+
+//drawing
+let background;
+let cancelPictureButton;
+let sendPictureButton;
+
+let pictureCanvas;
 
 let resetFields = false;
 let lastMessageTimeStamp = null;
@@ -86,6 +94,11 @@ let States = {
 let state = States.main;
 let lastMillis = 0;
 let typingMillis = 0;
+
+const pictureWidth = 260;
+const pictureHeight = 150;
+
+let isDrawingOpen = false;
 
 function setup()
 {
@@ -139,13 +152,17 @@ function setup()
     });
 }
 
-function kill()
+function kill(message)
 {
     if (state == States.room) { leaveRoom(); }
     if (state == States.lobby) { leaveLobby(); }
     if (state == States.changePw) { leavePasswordChange(); }
     if (state != States.main) { createMain(); }
     state = States.main;
+    if (message != undefined)
+    {
+        errorText.html(message)
+    }
     windowResized();
 }
 
@@ -363,9 +380,67 @@ function createChatRoom()
     textInputField.attribute('placeholder', 'Chat here...');
     textInputField.input(sendTyping);
 
+    pictureButton = createImg('palette.png');
+    pictureButton.size(80, 80)
+    pictureButton.mouseClicked(function(){
+        if (tempRank == 'guest')
+        {
+            chatBox.html('\n<b>You need an account to draw pictures</b>.', true);
+            chatBox.html('\n\n  ', true);
+        }
+        else if (!isDrawingOpen)
+        {
+            isDrawingOpen = true;
+
+            background = createDiv('');
+            background.attribute('class', 'modal');
+
+            cancelPictureButton = createButton('Cancel');
+            cancelPictureButton.mouseClicked(function(){
+                isDrawingOpen = false;
+
+                cancelPictureButton.remove();
+                sendPictureButton.remove();
+                background.remove();
+            });
+            cancelPictureButton.size(120, 40);
+            cancelPictureButton.style('font-size', '22px');
+            cancelPictureButton.style('background-color', '#d23f2f');
+            cancelPictureButton.style('border', '2px solid #9d1611');
+            cancelPictureButton.parent(background);
+
+            sendPictureButton = createButton('Send');
+            sendPictureButton.mouseClicked(function(){
+                isDrawingOpen = false;
+
+                cancelPictureButton.remove();
+                sendPictureButton.remove();
+                background.remove();
+            });
+            sendPictureButton.size(120, 40);
+            sendPictureButton.style('font-size', '22px');
+            sendPictureButton.style('background-color', '#34be54');
+            sendPictureButton.style('border', '2px solid #118f35');
+            sendPictureButton.parent(background);
+
+            if (pictureCanvas != undefined)
+            {
+                pictureCanvas.remove();
+            }
+            pictureCanvas = createCanvas(pictureWidth, pictureHeight);
+            pictureCanvas.attribute('id', 'canv')
+            pictureCanvas.parent(background);
+
+            windowResized();
+        }
+        fullScroll();
+    });
+
     typingText = createElement('typing', 'Nobody is typing at the moment...');
 
-    chatBox = createElement('chatbox', '<i>&nbsp;&nbsp;&nbsp;&nbsp;Welcome to <b>Room ' + room + '</b>! Type, then press enter to chat.</i>\n ');
+    chatBox = createElement('chatbox', '<i>&nbsp;&nbsp;&nbsp;&nbsp;Welcome to <b>Room ' + room + '</b>! Type, then press enter to chat. Alternatively, click in the bottom right to draw a picture</i>. \n');
+    addCommandLine();
+
     userList = createElement('listbox', '<i>User List:\n</i>');
 
     welcomeText = createElement('welcome', 'Welcome, <b>' + username + '</b>, to <b>Room ' + room + '</b>.');
@@ -381,6 +456,17 @@ function createChatRoom()
     lastChatName = '';
 
     windowResized();
+}
+
+function addCommandLine()
+{
+    if (tempRank == 'admin' || tempRank == 'mod')
+    {
+        chatBox.html('\nYour rank allows you to use these commands:\n\n', true);
+        chatBox.html('/rank [NAME] [RANK]\n', true);
+        chatBox.html('/delete [NAME]\n', true);
+        chatBox.html('\nList of valid ranks: reg, +, ++, mod, admin, guest (guest cannot be changed or set)\n\n', true);
+    }
 }
 
 function attemptGuest()
@@ -520,6 +606,7 @@ function leavePasswordChange()
 function leaveRoom()
 {
     textInputField.remove();
+    pictureButton.remove();
     chatBox.remove();
     userList.remove();
     typingText.remove();
@@ -624,12 +711,21 @@ function windowResized()
     else if (state == States.room)
     {
         textInputField.position(0, windowHeight - (80 + 16));
+        pictureButton.position(windowWidth - 80 - 8, windowHeight - 80 - 8);
         chatBox.position(0, 48);
         userList.position(windowWidth - 240, 48);
         chatBoxHeight = windowHeight - 80 - 32 - 48 - 8 - 24; // 8 for border
         typingText.position(0, windowHeight - (80 + 16 + 32));
         welcomeText.position(0,0);
         lobbyButton.position(windowWidth - 180, 8);
+
+        if (isDrawingOpen)
+        {
+            cancelPictureButton.position(8, windowHeight - 40 - 8);
+            sendPictureButton.position(windowWidth - 120 - 8, windowHeight - 40 - 8);
+            
+            pictureCanvas.position(windowWidth / 2 - pictureWidth / 2, windowHeight / 2 - 20 - pictureHeight / 2);
+        }
     }
 }
 
@@ -697,11 +793,11 @@ function getNameSpanner(rank) // used for rank colours
     {
         return '<span class="modName">[MOD] ';
     }
-    if (rank == 'plus')
+    if (rank == '+')
     {
         return '<span class="plusName">[+] ';
     }
-    if (rank == 'plusplus')
+    if (rank == '++')
     {
         return '<span class="plusPlusName">[++] ';
     }
@@ -722,11 +818,11 @@ function getMessageSpanner(rank) // used for rank colours
     {
         return '<span class="modText">';
     }
-    if (rank == 'plus')
+    if (rank == '+')
     {
         return '<span class="plusText">';
     }
-    if (rank == 'plusplus')
+    if (rank == '++')
     {
         return '<span class="plusPlusText">';
     }
@@ -776,7 +872,7 @@ function draw()
             typingMillis = Infinity;
             socket.emit('typing', false);
         }
-        
+
         if (resetFields)
         {
             textInputField.value('');
@@ -786,6 +882,14 @@ function draw()
         if (textInputField.value() == '\n')
         {
             textInputField.value('');
+        }
+
+        if (isDrawingOpen)
+        {
+            pictureCanvas.background(147);
+            fill(0);
+            ellipse(25, 25, 50, 50);
+            text('Sorry. still in development. Click send or cancel to leave this screen.', 0, 50, 200, 200);
         }
     }
 }

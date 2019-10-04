@@ -5,7 +5,7 @@
   },
   "Pooy": {
     "hash": "$2b$12$4KRMPAgLDLBEQzPa0n768ulkhy20xwmPUdRi5E1UQy/oXGbp9KngO",
-    "rank": "plusplus"
+    "rank": "++"
   },
   "tiggy02": {
     "hash": "$2b$12$XCTEs4pCTD.iJeKLR30cH.lE62xcVlsSZ34tOsTv3B/Mqo6pjbrfa",
@@ -29,7 +29,7 @@
   },
   "TestRankUp": {
     "hash": "$2b$12$iasRKwG0AGxfAoDEwRuFUuDDVO5j0.qmUCod91hX26hbP.a4P/g4O",
-    "rank": "plus"
+    "rank": "+"
   },
   "Notjackson": {
     "hash": "$2b$12$YjVvp.UU2yF69dmCWi4cLu2Gac2/0QbWGW/KjzfwxJ6fkQM9CFIIG",
@@ -41,7 +41,7 @@
   },
   "AnuragS": {
     "hash": "$2b$12$PtUFf2wYCcwU85lcUmFuOOA1KC9CxDQTPE4xQj/aj7uyLTZdjvn6q",
-    "rank": "plus"
+    "rank": "+"
   },
   "BreezyBuck": {
     "hash": "$2b$12$rfdfiPTZ02viu36NrR199.KXoF0Z2sKNSwyPh9KB1Dv0NRd..Pxli",
@@ -53,7 +53,7 @@
   },
   "OrangeIcePop": {
     "hash": "$2b$12$g6pmut2D266eFm3C7T5lHOj.mSsJA7sa459hEfeIvqQIf8RgE/kTa",
-    "rank": "plus"
+    "rank": "+"
   },
   "Brolypoly": {
     "hash": "$2b$12$2uEtMJ2lHUaw5LY7UdBTou6V3eGOfwNHCfBe6Lp1Fcqkep99nsxiO",
@@ -73,10 +73,14 @@
   },
   "NabRah": {
     "hash": "$2b$12$VnNBzja0nYQRYcaCWheLYOEjNrc2xRkpj81gNFDEu2b161svuclCW",
-    "rank": "plusplus"
+    "rank": "++"
   },
   "Anu": {
     "hash": "$2b$12$QI.8JRp4w8dS8u5jXo5NAuXuYIvGLqZhDyk6MsMbHP0o.Ve5dPNzi",
-    "rank": "plusplus"
+    "rank": "++"
+  },
+  "Yoop": {
+    "hash": "$2b$12$QkIbcb174WNILetIt0mTket/C/.YColTgTg9PueEQne1XF0a8/VI.",
+    "rank": "reg"
   }
 }

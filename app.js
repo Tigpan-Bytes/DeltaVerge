@@ -430,33 +430,29 @@ catch (err)
 function command(socket, message)
 {
 	let chatter = chatterList[socket.id];
-	if (chatter.rank != 'admin' && chatter.rank != 'mod')
-	{
-		return false;
-	}
 	if (message[0] == '/')
 	{
 		message = message.substr(1);
 		let words = message.split(' ');
 		if (words.length == 3 && words[0] == 'rank')
 		{
-			if ((words[2] == 'admin' || words[2] == 'mod') && chatter.rank != 'admin')
+			if (!isValidRank(words[2]))
 			{
 				return false;
 			}
-
 			if (words[1] in users)
 			{
-				if (users[words[1]].rank == 'admin')
+				if (!isCommandAllowed(chatter.rank, words[1].rank, -1)) // they need to be one step lower
 				{
 					return false;
 				}
-				if (words[2] == 'admin')
+				if (!isCommandAllowed(chatter.rank, words[2], -1)) // the set rank also needs to be one step lower
 				{
 					return false;
 				}
+
 				users[words[1]].rank = words[2];
-				let room = 'a';
+				let room = chatter.room;
 				for (let i in chatterList) 
 				{
 					if (chatterList[i].name == words[1])
@@ -509,11 +505,11 @@ function command(socket, message)
 
 			if (deleted != null)
 			{	
-				if (deleted.rank == 'admin')
+				if (!isCommandAllowed(chatter.rank, deleted.rank, -1)) // they need to be one step lower
 				{
 					return false;
 				}
-				socketList[deleted.id].emit('kill');
+				socketList[deleted.id].emit('kill', 'Your account was forcefully deleted by user ' + chatter.name + ' with the rank ' + chatter.rank + '.');
 				announceDisconnect(deleted, "delete");
 
 				delete chatterList[deleted.id];
@@ -535,7 +531,7 @@ function command(socket, message)
 			}
 			else if (words[1] in users)
 			{
-				if (users[words[1]].rank == 'admin')
+				if (!isCommandAllowed(chatter.rank, words[1].rank, -1)) // they need to be one step lower
 				{
 					return false;
 				}
@@ -767,6 +763,41 @@ function updateRoomTyping(room)
 			socketList[i].emit('typing', pack);
 		}
 	}
+}
+
+function isCommandAllowed(rOwner, rAffected, steps)
+{
+	return (getRankValue(rAffected) - getRankValue(rOwner)) <= steps
+}
+
+function isValidRank(rank)
+{
+	return rank == 'admin' || rank == 'mod' || rank == '++' || rank == '+' || rank == 'reg';
+}
+
+function getRankValue(rank)
+{
+	if (rank == 'admin')
+	{
+		return 4;
+	}
+	if (rank == 'mod')
+	{
+		return 3;
+	}
+	if (rank == '++')
+	{
+		return 0;
+	}
+	if (rank == '+')
+	{
+		return 0;
+	}
+	if (rank == 'guest')
+	{
+		return 0;
+	}
+	return 0; // regular
 }
 
 function getMonth(date)
