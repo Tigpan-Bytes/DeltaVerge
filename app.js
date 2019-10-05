@@ -420,6 +420,41 @@ io.sockets.on('connection', function (socket) {
 			console.log("Chat failed unexpectedly.");
 		}
 	});
+
+	socket.on('drawing', function(data){
+		try
+		{
+			if (socket.id in chatterList && typeof(data) == 'object' && data.length == 28600) //THIS MUST BE CHANGED
+			{
+				let date = new Date();
+				let pack = {
+					time: getTime(date),
+					timeStamp: date.getTime(),
+					rank: chatterList[socket.id].rank,
+					username: chatterList[socket.id].name,
+					image: data,
+				};
+				chatterList[socket.id].isTyping = false;
+				updateRoomTyping(chatterList[socket.id].room);
+
+				console.log(" -> Drawing sent: " + pack.time + " - " + chatterList[socket.id].room + " - [" + pack.rank + "] " + pack.username);
+
+				for (let i in chatterList) 
+				{
+					let tempSocket = socketList[i];
+
+					if (chatterList[socket.id].room == chatterList[i].room)
+					{
+						tempSocket.emit('newDrawing', pack);
+					}
+				}
+			}
+		}
+		catch (err)
+		{
+			console.log("Drawing failed unexpectedly.");
+		}
+	});
 });
 }
 catch (err)
