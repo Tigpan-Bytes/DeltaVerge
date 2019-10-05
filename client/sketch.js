@@ -75,9 +75,20 @@ let lobbyButton;
 let background;
 let cancelPictureButton;
 let sendPictureButton;
+let resetPictureButton;
 
 let pictureCanvas;
 let pictureImage;
+
+let smlPenButton;
+let midPenButton;
+let lrgPenButton;
+let masPenButton;
+let whiteColorButton;
+let blackColorButton;
+
+let pen = 2;
+let penColor = [0, 0, 0, 255];
 
 let resetFields = false;
 let lastMessageTimeStamp = null;
@@ -375,6 +386,27 @@ function createPasswordChange()
     windowResized();
 }
 
+function leaveDrawing()
+{
+    isDrawingOpen = false;
+
+    cancelPictureButton.remove();
+    sendPictureButton.remove();
+    resetPictureButton.remove();
+    background.remove();
+
+    pictureCanvas.remove();
+    pictureImage.remove();
+
+    smlPenButton.remove();
+    midPenButton.remove();
+    lrgPenButton.remove();
+    masPenButton.remove();
+
+    blackColorButton.remove();
+    whiteColorButton.remove();
+}
+
 function createChatRoom()
 {
     textInputField = createElement('textarea', '');
@@ -384,7 +416,7 @@ function createChatRoom()
     pictureButton = createImg('palette.png');
     pictureButton.size(80, 80)
     pictureButton.mouseClicked(function(){
-        if (tempRank == 'guest')
+        if (tempRank == 'guest' && false) //FIX LATER ON PROD FIX LATER ON PROD FIX LATER ON PROD FIX LATER ON PROD FIX LATER ON PROD FIX LATER ON PROD FIX LATER ON PROD FIX LATER ON PROD FIX LATER ON PROD FIX LATER ON PROD FIX LATER ON PROD FIX LATER ON PROD FIX LATER ON PROD FIX LATER ON PROD FIX LATER ON PROD FIX LATER ON PROD FIX LATER ON PROD FIX LATER ON PROD 
         {
             chatBox.html('\n<b>You need an account to draw pictures</b>.', true);
             chatBox.html('\n\n  ', true);
@@ -397,16 +429,7 @@ function createChatRoom()
             background.attribute('class', 'modal');
 
             cancelPictureButton = createButton('Cancel');
-            cancelPictureButton.mouseClicked(function(){
-                isDrawingOpen = false;
-
-                cancelPictureButton.remove();
-                sendPictureButton.remove();
-                background.remove();
-
-                pictureCanvas.remove();
-                pictureImage.remove();
-            });
+            cancelPictureButton.mouseClicked(leaveDrawing);
             cancelPictureButton.size(120, 40);
             cancelPictureButton.style('font-size', '22px');
             cancelPictureButton.style('background-color', '#d23f2f');
@@ -414,21 +437,44 @@ function createChatRoom()
             cancelPictureButton.parent(background);
 
             sendPictureButton = createButton('Send');
-            sendPictureButton.mouseClicked(function(){
-                isDrawingOpen = false;
-
-                cancelPictureButton.remove();
-                sendPictureButton.remove();
-                background.remove();
-
-                pictureCanvas.remove();
-                pictureImage.remove();
-            });
+            sendPictureButton.mouseClicked(leaveDrawing);
             sendPictureButton.size(120, 40);
             sendPictureButton.style('font-size', '22px');
             sendPictureButton.style('background-color', '#34be54');
             sendPictureButton.style('border', '2px solid #118f35');
             sendPictureButton.parent(background);
+
+            resetPictureButton = createButton('Reset');
+            resetPictureButton.mouseClicked(resetPicture);
+            resetPictureButton.size(120, 40);
+            resetPictureButton.style('font-size', '22px');
+            resetPictureButton.parent(background);
+       
+            smlPenButton = createImg('smlPen.png');
+            smlPenButton.size(40, 40);
+            smlPenButton.mouseClicked(function(){ pen = 1; });
+            smlPenButton.parent(background);
+            midPenButton = createImg('midPen.png');
+            midPenButton.size(40, 40);
+            midPenButton.mouseClicked(function(){ pen = 2; });
+            midPenButton.parent(background);
+            lrgPenButton = createImg('lrgPen.png');
+            lrgPenButton.size(40, 40);
+            lrgPenButton.mouseClicked(function(){ pen = 3; });
+            lrgPenButton.parent(background);
+            masPenButton = createImg('masPen.png');
+            masPenButton.size(40, 40);
+            masPenButton.mouseClicked(function(){ pen = 4; });
+            masPenButton.parent(background);
+
+            whiteColorButton = createImg('whiteColor.png');
+            whiteColorButton.size(40, 40);
+            whiteColorButton.mouseClicked(function(){ penColor = [255, 255, 255, 255]; });
+            whiteColorButton.parent(background);
+            blackColorButton = createImg('blackColor.png');
+            blackColorButton.size(40, 40);
+            blackColorButton.mouseClicked(function(){ penColor = [0, 0, 0, 255]; });
+            blackColorButton.parent(background);
 
             if (pictureCanvas != undefined)
             {
@@ -439,17 +485,7 @@ function createChatRoom()
             pictureCanvas.parent(background);
 
             pictureImage = createImage(pictureWidth, pictureHeight);
-            pictureImage.loadPixels();
-            for (let x = 0; x < pictureImage.width; x++) 
-            {
-                for (let y = 0; y < pictureImage.height; y++) 
-                {
-                    let a = map(y, 0, pictureImage.height, 255, 0);
-                    pictureImage.set(x, y, [0, 153, 204, a]);
-                }
-            }
-            pictureImage.set(30, 30, [255, 0, 0, 0]);
-            pictureImage.updatePixels();
+            resetPicture();
 
             windowResized();
         }
@@ -476,6 +512,22 @@ function createChatRoom()
     lastChatName = '';
 
     windowResized();
+}
+
+function resetPicture()
+{
+    pen = 2;
+    penColor = [0, 0, 0, 255];
+
+    pictureImage.loadPixels();
+    for (let x = 0; x < pictureImage.width; x++) 
+    {
+        for (let y = 0; y < pictureImage.height; y++) 
+        {
+            pictureImage.set(x, y, [255, 255, 255, 255]);
+        }
+    }
+    pictureImage.updatePixels();
 }
 
 function addCommandLine()
@@ -742,7 +794,15 @@ function windowResized()
         if (isDrawingOpen)
         {
             cancelPictureButton.position(8, windowHeight - 40 - 8);
+            smlPenButton.position(16 + 120 , windowHeight - 40 - 8);
+            midPenButton.position(16 + 120 + 48, windowHeight - 40 - 8);
+            lrgPenButton.position(16 + 120 + 48 + 48, windowHeight - 40 - 8);
+            masPenButton.position(16 + 120 + 48 + 48 + 48, windowHeight - 40 - 8);
+
             sendPictureButton.position(windowWidth - 120 - 8, windowHeight - 40 - 8);
+            blackColorButton.position(windowWidth - 120 - 8 - 48, windowHeight - 40 - 8);
+            whiteColorButton.position(windowWidth - 120 - 8 - 48 - 48, windowHeight - 40 - 8);
+            resetPictureButton.position(windowWidth - 120 - 8 - 48 - 48 - 128, windowHeight - 40 - 8);
 
             let xMod = (windowWidth - 60) / pictureWidth;
             let yMod = (windowHeight - 90) / pictureHeight;
@@ -914,13 +974,32 @@ function draw()
             pictureCanvas.background(147);
             if (mouseIsPressed)
             {
-                let realX = mouseX - pictureCanvas.position().x;
-                let realY = mouseY - pictureCanvas.position().y;
-                if (realX >= 0 && realY >= 0 && realX <= pictureCanvas.width && realY <= pictureCanvas.height)
+                if (mouseX >= 0 && mouseY >= 0 && mouseX <= pictureCanvas.width && mouseY <= pictureCanvas.height)
                 {
-                    pictureImage.loadPixels();
-                    pictureImage.set(floor(realX), floor(realY), [0, 0, 0, 255]);
-                    pictureImage.updatePixels();
+                    let realX = mouseX * (pictureWidth / pictureCanvas.width);
+                    let realY = mouseY * (pictureHeight / pictureCanvas.height);
+                    let diffX = (pmouseX * (pictureWidth / pictureCanvas.width)) - realX;
+                    let diffY = (pmouseY * (pictureWidth / pictureCanvas.width)) - realY;
+                    let iterations = sqrt((diffX * diffX) + (diffY * diffY));
+
+                    for (let i = 0; i <= iterations; ++i)
+                    {
+                        pictureImage.loadPixels();
+                        for (let x = -pen + 1; x < pen; ++x)
+                        {
+                            for (let y = -pen + 1; y < pen; ++y)
+                            {
+                                if (sqrt((x * x) + (y * y)) <= pen - 0.5)
+                                {
+                                    pictureImage.set(floor(realX) + x, floor(realY) + y, penColor);
+                                }
+                            }
+                        }
+                        pictureImage.updatePixels();
+
+                        realX += diffX / iterations;
+                        realY += diffY / iterations;
+                    }
                 }
             }
             image(pictureImage, 0, 0, pictureCanvas.width, pictureCanvas.height);
