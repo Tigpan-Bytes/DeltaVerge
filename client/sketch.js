@@ -71,8 +71,6 @@ let welcomeText;
 let typingText;
 let lobbyButton;
 
-let drawings = [];
-
 //drawing
 let background;
 let cancelPictureButton;
@@ -419,9 +417,9 @@ function sendDrawing()
     let pack = [];
 
     pictureImage.loadPixels();
-    for (let x = 0; x < pictureImage.width; x++) 
+    for (let y = 0; y < pictureImage.height; y++) 
     {
-        for (let y = 0; y < pictureImage.height; y++) 
+        for (let x = 0; x < pictureImage.width; x++) 
         {
             pack.push(sameColor(white, pictureImage.get(x, y)));
         }
@@ -439,6 +437,7 @@ function createChatRoom()
 
     pictureButton = createImg('palette.png');
     pictureButton.size(80, 80)
+    pictureButton.attribute('class', 'interact');
     pictureButton.mouseClicked(function(){
         if (tempRank == 'guest')
         {
@@ -480,31 +479,38 @@ function createChatRoom()
             smlPenButton.size(40, 40);
             smlPenButton.mouseClicked(function(){ pen = 1; });
             smlPenButton.parent(background);
+            smlPenButton.attribute('class', 'interact');
             midPenButton = createImg('midPen.png');
             midPenButton.size(40, 40);
             midPenButton.mouseClicked(function(){ pen = 2; });
             midPenButton.parent(background);
+            midPenButton.attribute('class', 'interact');
             lrgPenButton = createImg('lrgPen.png');
             lrgPenButton.size(40, 40);
             lrgPenButton.mouseClicked(function(){ pen = 3; });
             lrgPenButton.parent(background);
+            lrgPenButton.attribute('class', 'interact');
             masPenButton = createImg('masPen.png');
             masPenButton.size(40, 40);
             masPenButton.mouseClicked(function(){ pen = 4; });
             masPenButton.parent(background);
+            masPenButton.attribute('class', 'interact');
             paintBucketButton = createImg('paintBucket.png');
             paintBucketButton.size(40, 40);
             paintBucketButton.mouseClicked(function(){ pen = -1; });
             paintBucketButton.parent(background);
+            paintBucketButton.attribute('class', 'interact');
 
             whiteColorButton = createImg('whiteColor.png');
             whiteColorButton.size(40, 40);
             whiteColorButton.mouseClicked(function(){ penColor = [255, 255, 255, 255]; });
             whiteColorButton.parent(background);
+            whiteColorButton.attribute('class', 'interact');
             blackColorButton = createImg('blackColor.png');
             blackColorButton.size(40, 40);
             blackColorButton.mouseClicked(function(){ penColor = [0, 0, 0, 255]; });
             blackColorButton.parent(background);
+            blackColorButton.attribute('class', 'interact');
 
             if (pictureCanvas != undefined)
             {
@@ -713,8 +719,6 @@ function leaveRoom()
     typingText.remove();
     welcomeText.remove();
     lobbyButton.remove();
-
-    drawings = [];
 }
 
 function windowResized() 
@@ -925,22 +929,49 @@ function addDrawing(data)
         }
     }
 
-    let canv = createCanvas(pictureWidth, pictureHeight);
-    canv.parent(chatBox);
-    //canv.position(8, chatBox.elt.scrollTop);
-    canv.style('position', 'relative');
+    let canvas = document.createElement("canvas");
+    let ctx = canvas.getContext("2d");
 
-    let newPic = createImage(pictureWidth, pictureHeight);
-    newPic.loadPixels();
-    for (let i = 0; i < data.image.length; i++)
+    // size the canvas to your desired image
+    canvas.width = pictureWidth;
+    canvas.height = pictureHeight;
+
+    // get the imageData and pixel array from the canvas
+    let imgData = ctx.getImageData(0,0,pictureWidth,pictureHeight);
+    let pixelData = imgData.data;
+
+    // manipulate some pixel elements
+    for(let i = 0; i < data.image.length; ++i)
     {
-        newPic.set(floor(i / pictureHeight), i % pictureHeight, data.image[i] ? [255, 255, 255, 255] : [0, 0, 0, 255]);
+        if (data.image[i])
+        {
+            pixelData[i * 4] = 255;   // set every red pixel element to 255
+            pixelData[i * 4 + 1] = 255; 
+            pixelData[i * 4 + 2] = 255; 
+        }
+        else
+        {
+            pixelData[i * 4] = 0;   // set every red pixel element to 255
+            pixelData[i * 4 + 1] = 0; 
+            pixelData[i * 4 + 2] = 0; 
+        }
+        pixelData[i * 4 + 3] = 255; // make this pixel opaque
     }
-    newPic.updatePixels();
-    image(newPic, 0, 0, pictureWidth, pictureHeight); 
-    canv.attribute('id', 'drawn' + random());
 
-    drawings.push({canv: canv, pic: newPic});
+    // put the modified pixels back on the canvas
+    ctx.putImageData(imgData,0,0);
+
+    // create a new img object
+    let image=new Image();
+
+    // set the img.src to the canvas data url
+    image.src = canvas.toDataURL();
+
+    // append the new img object to the page
+    chatBox.html("\n", true);
+
+    chatBox.elt.appendChild(image);
+    chatBox.html("\n  ", true);
 
     lastChatName = data.username;
 
