@@ -75,8 +75,21 @@ let lobbyButton;
 let background;
 let cancelPictureButton;
 let sendPictureButton;
+let resetPictureButton;
 
 let pictureCanvas;
+let pictureImage;
+
+let smlPenButton;
+let midPenButton;
+let lrgPenButton;
+let masPenButton;
+let paintBucketButton;
+let whiteColorButton;
+let blackColorButton;
+
+let pen = 2;
+let penColor = [0, 0, 0, 255];
 
 let resetFields = false;
 let lastMessageTimeStamp = null;
@@ -95,8 +108,8 @@ let state = States.main;
 let lastMillis = 0;
 let typingMillis = 0;
 
-const pictureWidth = 260;
-const pictureHeight = 150;
+const pictureWidth = 220;
+const pictureHeight = 130;
 
 let isDrawingOpen = false;
 
@@ -107,6 +120,7 @@ function setup()
     socket = io();
 
     socket.on('newChatMessage', addChatMessage);
+    socket.on('newDrawing', addDrawing);
     socket.on('newChatAnnouncement', addChatAnnouncement);
     socket.on('newUserList', updateUserList);
     socket.on('acceptedUN', acceptedLogin);
@@ -374,6 +388,47 @@ function createPasswordChange()
     windowResized();
 }
 
+function leaveDrawing()
+{
+    socket.emit('typing', false);
+    isDrawingOpen = false;
+
+    cancelPictureButton.remove();
+    sendPictureButton.remove();
+    resetPictureButton.remove();
+    background.remove();
+
+    pictureCanvas.remove();
+    pictureImage = undefined;
+
+    smlPenButton.remove();
+    midPenButton.remove();
+    lrgPenButton.remove();
+    masPenButton.remove();
+    paintBucketButton.remove();
+
+    blackColorButton.remove();
+    whiteColorButton.remove();
+}
+
+function sendDrawing()
+{
+    const white = [255, 255, 255, 255];
+    let pack = [];
+
+    pictureImage.loadPixels();
+    for (let y = 0; y < pictureImage.height; y++) 
+    {
+        for (let x = 0; x < pictureImage.width; x++) 
+        {
+            pack.push(sameColor(white, pictureImage.get(x, y)));
+        }
+    }
+
+    socket.emit('drawing', pack);
+    leaveDrawing();
+}
+
 function createChatRoom()
 {
     textInputField = createElement('textarea', '');
@@ -382,27 +437,24 @@ function createChatRoom()
 
     pictureButton = createImg('palette.png');
     pictureButton.size(80, 80)
+    pictureButton.attribute('class', 'interact');
     pictureButton.mouseClicked(function(){
         if (tempRank == 'guest')
         {
-            chatBox.html('\n<b>You need an account to draw pictures</b>.', true);
-            chatBox.html('\n\n  ', true);
+            chatBox.html('\n<b>You need an account to draw pictures.</b>', true);
+            chatBox.html('\n<b>Refresh the page or leave the room and logout to create an account.</b>', true);
+            chatBox.html('\n\n ', true);
         }
         else if (!isDrawingOpen)
         {
             isDrawingOpen = true;
+            socket.emit('typing', true);
 
             background = createDiv('');
             background.attribute('class', 'modal');
 
             cancelPictureButton = createButton('Cancel');
-            cancelPictureButton.mouseClicked(function(){
-                isDrawingOpen = false;
-
-                cancelPictureButton.remove();
-                sendPictureButton.remove();
-                background.remove();
-            });
+            cancelPictureButton.mouseClicked(leaveDrawing);
             cancelPictureButton.size(120, 40);
             cancelPictureButton.style('font-size', '22px');
             cancelPictureButton.style('background-color', '#d23f2f');
@@ -410,26 +462,65 @@ function createChatRoom()
             cancelPictureButton.parent(background);
 
             sendPictureButton = createButton('Send');
-            sendPictureButton.mouseClicked(function(){
-                isDrawingOpen = false;
-
-                cancelPictureButton.remove();
-                sendPictureButton.remove();
-                background.remove();
-            });
+            sendPictureButton.mouseClicked(sendDrawing);
             sendPictureButton.size(120, 40);
             sendPictureButton.style('font-size', '22px');
             sendPictureButton.style('background-color', '#34be54');
             sendPictureButton.style('border', '2px solid #118f35');
             sendPictureButton.parent(background);
 
+            resetPictureButton = createButton('Reset');
+            resetPictureButton.mouseClicked(resetPicture);
+            resetPictureButton.size(120, 40);
+            resetPictureButton.style('font-size', '22px');
+            resetPictureButton.parent(background);
+       
+            smlPenButton = createImg('smlPen.png');
+            smlPenButton.size(40, 40);
+            smlPenButton.mouseClicked(function(){ pen = 1; });
+            smlPenButton.parent(background);
+            smlPenButton.attribute('class', 'interact');
+            midPenButton = createImg('midPen.png');
+            midPenButton.size(40, 40);
+            midPenButton.mouseClicked(function(){ pen = 2; });
+            midPenButton.parent(background);
+            midPenButton.attribute('class', 'interact');
+            lrgPenButton = createImg('lrgPen.png');
+            lrgPenButton.size(40, 40);
+            lrgPenButton.mouseClicked(function(){ pen = 3; });
+            lrgPenButton.parent(background);
+            lrgPenButton.attribute('class', 'interact');
+            masPenButton = createImg('masPen.png');
+            masPenButton.size(40, 40);
+            masPenButton.mouseClicked(function(){ pen = 4; });
+            masPenButton.parent(background);
+            masPenButton.attribute('class', 'interact');
+            paintBucketButton = createImg('paintBucket.png');
+            paintBucketButton.size(40, 40);
+            paintBucketButton.mouseClicked(function(){ pen = -1; });
+            paintBucketButton.parent(background);
+            paintBucketButton.attribute('class', 'interact');
+
+            whiteColorButton = createImg('whiteColor.png');
+            whiteColorButton.size(40, 40);
+            whiteColorButton.mouseClicked(function(){ penColor = [255, 255, 255, 255]; });
+            whiteColorButton.parent(background);
+            whiteColorButton.attribute('class', 'interact');
+            blackColorButton = createImg('blackColor.png');
+            blackColorButton.size(40, 40);
+            blackColorButton.mouseClicked(function(){ penColor = [0, 0, 0, 255]; });
+            blackColorButton.parent(background);
+            blackColorButton.attribute('class', 'interact');
+
             if (pictureCanvas != undefined)
             {
                 pictureCanvas.remove();
             }
             pictureCanvas = createCanvas(pictureWidth, pictureHeight);
-            pictureCanvas.attribute('id', 'canv')
             pictureCanvas.parent(background);
+
+            pictureImage = createImage(pictureWidth, pictureHeight);
+            resetPicture();
 
             windowResized();
         }
@@ -456,6 +547,22 @@ function createChatRoom()
     lastChatName = '';
 
     windowResized();
+}
+
+function resetPicture()
+{
+    pen = 2;
+    penColor = [0, 0, 0, 255];
+
+    pictureImage.loadPixels();
+    for (let x = 0; x < pictureImage.width; x++) 
+    {
+        for (let y = 0; y < pictureImage.height; y++) 
+        {
+            pictureImage.set(x, y, [255, 255, 255, 255]);
+        }
+    }
+    pictureImage.updatePixels();
 }
 
 function addCommandLine()
@@ -722,9 +829,23 @@ function windowResized()
         if (isDrawingOpen)
         {
             cancelPictureButton.position(8, windowHeight - 40 - 8);
+            smlPenButton.position(16 + 120 , windowHeight - 40 - 8);
+            midPenButton.position(16 + 120 + 48, windowHeight - 40 - 8);
+            lrgPenButton.position(16 + 120 + 48 + 48, windowHeight - 40 - 8);
+            masPenButton.position(16 + 120 + 48 + 48 + 48, windowHeight - 40 - 8);
+            paintBucketButton.position(16 + 120 + 48 + 48 + 48 + 48, windowHeight - 40 - 8);
+
             sendPictureButton.position(windowWidth - 120 - 8, windowHeight - 40 - 8);
+            blackColorButton.position(windowWidth - 120 - 8 - 48, windowHeight - 40 - 8);
+            whiteColorButton.position(windowWidth - 120 - 8 - 48 - 48, windowHeight - 40 - 8);
+            resetPictureButton.position(windowWidth - 120 - 8 - 48 - 48 - 128, windowHeight - 40 - 8);
+
+            let xMod = (windowWidth - 60) / pictureWidth;
+            let yMod = (windowHeight - 90) / pictureHeight;
+            let multi = xMod < yMod ? xMod : yMod;
+            resizeCanvas(pictureWidth * multi, pictureHeight * multi);
             
-            pictureCanvas.position(windowWidth / 2 - pictureWidth / 2, windowHeight / 2 - 20 - pictureHeight / 2);
+            pictureCanvas.position(windowWidth / 2 - width / 2, windowHeight / 2 - 20 - height / 2);
         }
     }
 }
@@ -774,6 +895,83 @@ function addChatMessage(data)
             chatBox.html("\n" + getMessageSpanner(data.rank) + data.message + "</span>\n ", true);
         }
     }
+
+    lastChatName = data.username;
+
+    if (isTop)
+    {
+        fullScroll();
+    }
+}
+
+function addDrawing(data)
+{
+    let isTop = isScrolled();
+
+    chatBox.html(chatBox.html().slice(0, chatBox.html().length - 3));
+    //Put message in chatbox
+    if (lastMessageTimeStamp == null || data.timeStamp > lastMessageTimeStamp + noChatDisplayTime || data.timeStamp > lastPrintedMessageTimeStamp + forceDisplayTime)
+    {
+        lastMessageTimeStamp = data.timeStamp;
+        lastPrintedMessageTimeStamp = data.timeStamp;
+        chatBox.html("\n\n" + data.time + " - <b>" + getNameSpanner(data.rank) + data.username + "</span></b>:\n", true);
+    }
+    else
+    {
+        lastMessageTimeStamp = data.timeStamp;
+        if (lastChatName != data.username)
+        {
+            chatBox.html("\n\n&nbsp;&nbsp;&nbsp;&nbsp;<b>" + getNameSpanner(data.rank) + data.username + "</span></b>:\n", true);
+        }
+        else
+        {
+            chatBox.html("\n", true);
+        }
+    }
+
+    let canvas = document.createElement("canvas");
+    let ctx = canvas.getContext("2d");
+
+    // size the canvas to your desired image
+    canvas.width = pictureWidth;
+    canvas.height = pictureHeight;
+
+    // get the imageData and pixel array from the canvas
+    let imgData = ctx.getImageData(0,0,pictureWidth,pictureHeight);
+    let pixelData = imgData.data;
+
+    // manipulate some pixel elements
+    for(let i = 0; i < data.image.length; ++i)
+    {
+        if (data.image[i])
+        {
+            pixelData[i * 4] = 255;   // set every red pixel element to 255
+            pixelData[i * 4 + 1] = 255; 
+            pixelData[i * 4 + 2] = 255; 
+        }
+        else
+        {
+            pixelData[i * 4] = 0;   // set every red pixel element to 255
+            pixelData[i * 4 + 1] = 0; 
+            pixelData[i * 4 + 2] = 0; 
+        }
+        pixelData[i * 4 + 3] = 255; // make this pixel opaque
+    }
+
+    // put the modified pixels back on the canvas
+    ctx.putImageData(imgData,0,0);
+
+    // create a new img object
+    let image=new Image();
+
+    // set the img.src to the canvas data url
+    image.src = canvas.toDataURL();
+
+    // append the new img object to the page
+    chatBox.html("\n", true);
+
+    chatBox.elt.appendChild(image);
+    chatBox.html("\n  ", true);
 
     lastChatName = data.username;
 
@@ -867,31 +1065,102 @@ function draw()
             socket.emit('status', focused)
         }
 
-        if (typingMillis < millis() - 4000)
-        {
-            typingMillis = Infinity;
-            socket.emit('typing', false);
-        }
-
-        if (resetFields)
-        {
-            textInputField.value('');
-            resetFields = false;
-        }
-        
-        if (textInputField.value() == '\n')
-        {
-            textInputField.value('');
-        }
-
         if (isDrawingOpen)
         {
             pictureCanvas.background(147);
-            fill(0);
-            ellipse(25, 25, 50, 50);
-            text('Sorry. still in development. Click send or cancel to leave this screen.', 0, 50, 200, 200);
+            if (mouseIsPressed && pen >= 0)
+            {
+                if (mouseX >= 0 && mouseY >= 0 && mouseX <= pictureCanvas.width && mouseY <= pictureCanvas.height)
+                {
+                    let realX = mouseX * (pictureWidth / pictureCanvas.width);
+                    let realY = mouseY * (pictureHeight / pictureCanvas.height);
+                    let diffX = (pmouseX * (pictureWidth / pictureCanvas.width)) - realX;
+                    let diffY = (pmouseY * (pictureWidth / pictureCanvas.width)) - realY;
+                    let iterations = sqrt((diffX * diffX) + (diffY * diffY));
+
+                    pictureImage.loadPixels();
+                    for (let i = 0; i <= iterations; ++i)
+                    {
+                        for (let x = -pen + 1; x < pen; ++x)
+                        {
+                            for (let y = -pen + 1; y < pen; ++y)
+                            {
+                                let xx = floor(realX) + x;
+                                let yy = floor(realY) + y;
+                                if (xx >= 0 && xx < pictureWidth && yy >= 0 && yy < pictureHeight && sqrt((x * x) + (y * y)) <= pen - 0.5)
+                                {
+                                    pictureImage.set(xx, yy, penColor);
+                                }
+                            }
+                        }
+
+                        realX += diffX / iterations;
+                        realY += diffY / iterations;
+                    }
+                    pictureImage.updatePixels();
+                }
+            }
+            image(pictureImage, 0, 0, pictureCanvas.width, pictureCanvas.height);
+        }
+        else
+        {
+            if (typingMillis < millis() - 4000)
+            {
+                typingMillis = Infinity;
+                socket.emit('typing', isDrawingOpen);
+            }
+
+            if (resetFields)
+            {
+                textInputField.value('');
+                resetFields = false;
+            }
+            
+            if (textInputField.value() == '\n')
+            {
+                textInputField.value('');
+            }
         }
     }
+}
+
+function mousePressed()
+{
+    if (isDrawingOpen && pen < 0)
+    {
+        if (mouseX >= 0 && mouseY >= 0 && mouseX <= pictureCanvas.width && mouseY <= pictureCanvas.height)
+        {
+            if (pen == -1)
+            {
+                let realX = floor(mouseX * (pictureWidth / pictureCanvas.width));
+                let realY = floor(mouseY * (pictureHeight / pictureCanvas.height));
+
+                pictureImage.loadPixels();
+                let originColor = pictureImage.get(realX, realY);
+                if (!sameColor(originColor, penColor))
+                {
+                    let frontier = new Array();
+                    frontier.unshift({x: realX, y: realY});
+                    pictureImage.set(realX, realY, penColor);
+
+                    while (frontier.length > 0)
+                    {
+                        let newF = frontier.pop();
+                        if (newF.x > 0 && sameColor(pictureImage.get(newF.x - 1, newF.y), originColor)) { pictureImage.set(newF.x - 1, newF.y, penColor); frontier.unshift({x: newF.x - 1, y: newF.y}); }
+                        if (newF.y > 0 && sameColor(pictureImage.get(newF.x, newF.y - 1), originColor)) { pictureImage.set(newF.x, newF.y - 1, penColor); frontier.unshift({x: newF.x, y: newF.y - 1}); }
+                        if (newF.x < pictureWidth - 1 && sameColor(pictureImage.get(newF.x + 1, newF.y), originColor)) { pictureImage.set(newF.x + 1, newF.y, penColor); frontier.unshift({x: newF.x + 1, y: newF.y}); }
+                        if (newF.y < pictureHeight - 1 && sameColor(pictureImage.get(newF.x, newF.y + 1), originColor)) { pictureImage.set(newF.x, newF.y + 1, penColor); frontier.unshift({x: newF.x, y: newF.y + 1}); }
+                    }
+                }
+                pictureImage.updatePixels();
+            }
+        }
+    }
+}
+
+function sameColor(a, b)
+{
+    return red(a) == red(b) && green(a) == green(b) && blue(a) == blue(b);
 }
 
 function sendTyping()
