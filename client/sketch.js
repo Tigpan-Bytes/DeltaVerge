@@ -112,6 +112,7 @@ const pictureWidth = 220;
 const pictureHeight = 130;
 
 let isDrawingOpen = false;
+let forceFullScroll = -1;
 
 function setup()
 {
@@ -567,12 +568,21 @@ function resetPicture()
 
 function addCommandLine()
 {
-    if (tempRank == 'admin' || tempRank == 'mod')
+    if (tempRank != 'guest')
     {
-        chatBox.html('\nYour rank allows you to use these commands:\n\n', true);
-        chatBox.html('/rank [NAME] [RANK]\n', true);
-        chatBox.html('/delete [NAME]\n', true);
-        chatBox.html('\nList of valid ranks: reg, +, ++, mod, admin, guest (guest cannot be changed or set)\n\n', true);
+        chatBox.html('\nYour rank allows you to use these commands:\n', true);
+        chatBox.html('\n&nbsp;&nbsp;<b>=== Basic Commands ===</b>\n', true);
+        chatBox.html('/whisper [NAME] [MESSAGE]\n', true);
+        chatBox.html('&nbsp;&nbsp;=> Silently messages the user so nobody else can see, works across different and same rooms.\n', true);
+        if (tempRank == 'admin' || tempRank == 'mod')
+        {
+            chatBox.html('\n&nbsp;&nbsp;<b>=== Admin/Mod Commands ===</b>\n', true);
+            chatBox.html('/rank [NAME] [RANK]\n', true);
+            chatBox.html('&nbsp;&nbsp;=> Changes the rank for the given user to the one specified.\n', true);
+            chatBox.html('/delete [NAME]\n', true);
+            chatBox.html('&nbsp;&nbsp;=> PERMANENTLY deletes the account of the given user.\n', true);
+            chatBox.html('\nList of valid ranks: reg, +, ++, mod, admin, guest (guest cannot be changed or set)\n\n', true);
+        }
     }
 }
 
@@ -977,6 +987,7 @@ function addDrawing(data)
 
     if (isTop)
     {
+        forceFullScroll = 5;
         fullScroll();
     }
 }
@@ -1070,7 +1081,7 @@ function draw()
             pictureCanvas.background(147);
             if (mouseIsPressed && pen >= 0)
             {
-                if (mouseX >= 0 && mouseY >= 0 && mouseX <= pictureCanvas.width && mouseY <= pictureCanvas.height)
+                if ((mouseX >= 0 && mouseY >= 0 && mouseX <= pictureCanvas.width && mouseY <= pictureCanvas.height) || (pmouseX >= 0 && pmouseY >= 0 && pmouseX <= pictureCanvas.width && pmouseY <= pictureCanvas.height))
                 {
                     let realX = mouseX * (pictureWidth / pictureCanvas.width);
                     let realY = mouseY * (pictureHeight / pictureCanvas.height);
@@ -1120,6 +1131,15 @@ function draw()
             {
                 textInputField.value('');
             }
+        }
+
+        if (forceFullScroll >= 0)
+        {
+            if (forceFullScroll == 0)
+            {
+                fullScroll();
+            }
+            forceFullScroll--;
         }
     }
 }

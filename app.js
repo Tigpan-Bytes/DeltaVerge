@@ -389,28 +389,60 @@ io.sockets.on('connection', function (socket) {
 	socket.on('chat', function(data){
 		try
 		{
-			if (!command(socket, data) && socket.id in chatterList && typeof(data) == 'string')
+			if (socket.id in chatterList && typeof(data) == 'string')
 			{
-				let date = new Date();
-				let pack = {
-					time: getTime(date),
-					timeStamp: date.getTime(),
-					rank: chatterList[socket.id].rank,
-					username: chatterList[socket.id].name,
-					message: cleanseMessage(data),
-				};
-				chatterList[socket.id].isTyping = false;
-				updateRoomTyping(chatterList[socket.id].room);
-
-				console.log(pack.time + " - " + chatterList[socket.id].room + " - [" + pack.rank + "] " + pack.username + ": " + pack.message);
-
-				for (let i in chatterList) 
+				if (data[0] == '/')
 				{
-					let tempSocket = socketList[i];
-
-					if (chatterList[socket.id].room == chatterList[i].room)
+					if (chatterList[socket.id].rank == 'guest')
 					{
-						tempSocket.emit('newChatMessage', pack);
+						let date = new Date();
+						let pack = {
+							spanner: '<span style="color: #300;">',
+							time: getTime(date),
+							timeStamp: date.getTime(),
+							username: '',
+							message: "You must have an account to use commands...",
+						};
+				
+						socket.emit('newChatAnnouncement', pack)
+					}
+					else if (!command(socket, data))
+					{
+						let date = new Date();
+						let pack = {
+							spanner: '<span style="color: #700;">',
+							time: getTime(date),
+							timeStamp: date.getTime(),
+							username: '',
+							message: "Command failed to execute...",
+						};
+				
+						socket.emit('newChatAnnouncement', pack)
+					}
+				}
+				else
+				{
+					let date = new Date();
+					let pack = {
+						time: getTime(date),
+						timeStamp: date.getTime(),
+						rank: chatterList[socket.id].rank,
+						username: chatterList[socket.id].name,
+						message: cleanseMessage(data),
+					};
+					chatterList[socket.id].isTyping = false;
+					updateRoomTyping(chatterList[socket.id].room);
+
+					console.log(pack.time + " - " + chatterList[socket.id].room + " - [" + pack.rank + "] " + pack.username + ": " + pack.message);
+
+					for (let i in chatterList) 
+					{
+						let tempSocket = socketList[i];
+
+						if (chatterList[socket.id].room == chatterList[i].room)
+						{
+							tempSocket.emit('newChatMessage', pack);
+						}
 					}
 				}
 			}
@@ -464,11 +496,48 @@ catch (err)
 
 function command(socket, message)
 {
-	let chatter = chatterList[socket.id];
-	if (message[0] == '/')
+	try
 	{
+		let chatter = chatterList[socket.id];
 		message = message.substr(1);
 		let words = message.split(' ');
+		if (words.length >= 3 && words[0] == 'whisper')
+		{
+			let wisp = null;
+			for (let i in chatterList) 
+			{
+				if (chatterList[i].name == words[1])
+				{
+					wisp = chatterList[i];
+				}
+			}
+
+			if (wisp != null)
+			{	
+				let wMessage = '';
+				for (let i = 2; i < words.length - 1; i++)
+				{
+					wMessage += words[i] + ' ';
+				}	
+				wMessage += words[words.length - 1];
+
+				let date = new Date();
+				console.log('COMMAND: ' + chatter.name + ' - [' + chatter.rank +'] Whispered user ' + wisp.name + ": " + wMessage + " | Time: " + getSuperTime(date));
+
+				let pack = {
+					spanner: '<span style="color: #057;">',
+					time: getTime(date),
+					timeStamp: date.getTime(),
+					username: chatter.name,
+					message: " => " + wisp.name + ": " + wMessage,
+				};
+		
+				socket.emit('newChatAnnouncement', pack);
+				socketList[wisp.id].emit('newChatAnnouncement', pack);
+
+				return true;
+			}
+		}
 		if (words.length == 3 && words[0] == 'rank')
 		{
 			if (!isValidRank(words[2]))
@@ -477,7 +546,7 @@ function command(socket, message)
 			}
 			if (words[1] in users)
 			{
-				if (!isCommandAllowed(chatter.rank, words[1].rank, -1)) // they need to be one step lower
+				if (!isCommandAllowed(chatter.rank, users[words[1]].rank, -1)) // they need to be one step lower
 				{
 					return false;
 				}
@@ -580,6 +649,10 @@ function command(socket, message)
 				});
 			}
 		}
+	}
+	catch (err)
+	{
+		console.log("Command failed unexpectedly.");
 	}
 	return false;
 }
