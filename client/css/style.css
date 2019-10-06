@@ -5,7 +5,8 @@ body, html {
 }
 
 canvas{
-    display:inline-block;
+    position: relative;
+    display:block;
     z-index: 1;
 }
 

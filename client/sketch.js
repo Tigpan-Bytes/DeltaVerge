@@ -4,17 +4,18 @@ const pictureHeight = 130;
 let chatBox;
 let dataBuffer;
 
-const single = function(p)
+let single = function(p)
 {
-    let canv;
     let pic;
 
     p.setup = function()
     {
-        canv = p.createCanvas(pictureWidth, pictureHeight);
-        canv.attribute('id', 'drawn' + p.random());
-        canv.parent(chatBox);
-        canv.style('position', 'relative'); 
+        let newDiv = p.createDiv();
+        newDiv.parent(chatBox);
+
+        p.createCanvas(pictureWidth, pictureHeight);
+        this.canvas.setAttribute('id', 'drawn' + p.random());
+        newDiv.elt.appendChild(this.canvas);
 
         pic = p.createImage(pictureWidth, pictureHeight);
         pic.loadPixels();
@@ -25,16 +26,18 @@ const single = function(p)
         pic.updatePixels();
         //p.image(pic, 0, 0);
         
-        p.background(0);
-    };
-    
-    p.create = function(pic)
-    {
-        p.image(pic, 0, 0); 
+        //p.background(0);
     };
 
-    p.draw = function() 
+    p.render = function() 
     {
+        //p.createCanvas(pictureWidth, pictureHeight);
+        //p.createCanvas(pictureWidth, pictureHeight);
+        //this.canvas.setAttribute('id', 'drawn' + p.random());
+        //chatBox.elt.appendChild(this.canvas);
+
+        //p.print(iddd);
+        //p.background(0);
         p.image(pic, 0, 0);
     };
 }
@@ -980,10 +983,10 @@ const main = function(p)
 
         for (let i = 0; i < drawings.length; ++i)
         {
-            drawings.create();
-        } //Keep this, it calls a function that doesn't exist but makes everything work. thanks javascript
+            drawings[i].render();
+        }
 
-        chatBox.html("\n ", true);
+        //chatBox.html("\n ", true);
 
         lastChatName = data.username;
 
