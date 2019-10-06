@@ -4,6 +4,11 @@ body, html {
     background-color: #bbbbbb;
 }
 
+canvas{
+    display:inline-block;
+    z-index: 1;
+}
+
 .baseName {
     color: #000;
 }

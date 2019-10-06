@@ -71,6 +71,8 @@ let welcomeText;
 let typingText;
 let lobbyButton;
 
+let drawings = [];
+
 //drawing
 let background;
 let cancelPictureButton;
@@ -711,6 +713,8 @@ function leaveRoom()
     typingText.remove();
     welcomeText.remove();
     lobbyButton.remove();
+
+    drawings = [];
 }
 
 function windowResized() 
@@ -887,16 +891,6 @@ function addChatMessage(data)
             chatBox.html("\n" + getMessageSpanner(data.rank) + data.message + "</span>\n ", true);
         }
     }
-    let canv = createGraphics(pictureWidth, pictureHeight);
-    canv.parent(chatBox);
-
-    let newPic = createImage(pictureWidth, pictureHeight);
-    pictureImage.loadPixels();
-    for (let i = 0; i < data.image.length; i++)
-    {
-        newPic.set(floor(i / pictureWidth), i % pictureWidth, data.image[i] ? [255, 255, 255, 255] : [0, 0, 0, 255]);
-    }
-    pictureImage.updatePixels();
 
     lastChatName = data.username;
 
@@ -930,7 +924,23 @@ function addDrawing(data)
             chatBox.html("\n", true);
         }
     }
-    
+
+    let canv = createCanvas(pictureWidth, pictureHeight);
+    canv.parent(chatBox);
+    //canv.position(8, chatBox.elt.scrollTop);
+    canv.style('position', 'relative');
+
+    let newPic = createImage(pictureWidth, pictureHeight);
+    newPic.loadPixels();
+    for (let i = 0; i < data.image.length; i++)
+    {
+        newPic.set(floor(i / pictureHeight), i % pictureHeight, data.image[i] ? [255, 255, 255, 255] : [0, 0, 0, 255]);
+    }
+    newPic.updatePixels();
+    image(newPic, 0, 0, pictureWidth, pictureHeight); 
+    canv.attribute('id', 'drawn' + random());
+
+    drawings.push({canv: canv, pic: newPic});
 
     lastChatName = data.username;
 
