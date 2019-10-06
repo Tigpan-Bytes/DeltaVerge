@@ -71,16 +71,24 @@
     "hash": "$2b$12$J1rmzrQZtlvWJeCMgvBDhOB16Slsxch3LTIMxykF/jcNAsXhzq79C",
     "rank": "reg"
   },
-  "NabRah": {
-    "hash": "$2b$12$VnNBzja0nYQRYcaCWheLYOEjNrc2xRkpj81gNFDEu2b161svuclCW",
-    "rank": "++"
-  },
   "Anu": {
     "hash": "$2b$12$QI.8JRp4w8dS8u5jXo5NAuXuYIvGLqZhDyk6MsMbHP0o.Ve5dPNzi",
-    "rank": "++"
+    "rank": "mod"
   },
   "Yoop": {
     "hash": "$2b$12$QkIbcb174WNILetIt0mTket/C/.YColTgTg9PueEQne1XF0a8/VI.",
+    "rank": "reg"
+  },
+  "awesomeweirdo": {
+    "hash": "$2b$12$wvek8TILFSC8MHv4FTXjR.7c9xKy3SNn4QfPRjzsH9DceDk27N9X6",
+    "rank": "mod"
+  },
+  "gamer": {
+    "hash": "$2b$12$A3oncFvEESaCxsdOLOpSsudPThMTpkt6BPYOtRfqsplGhXHAwkjjG",
+    "rank": "reg"
+  },
+  "daddy": {
+    "hash": "$2b$12$P4.hq/IYiMGCEFgBYqqVBuF0IsG9cthgmVWnpa7I5mJ90PMrI7msm",
     "rank": "reg"
   }
 }
