@@ -456,7 +456,7 @@ io.sockets.on('connection', function (socket) {
 	socket.on('drawing', function(data){
 		try
 		{
-			if (socket.id in chatterList && typeof(data) == 'object' && data.length == 28600) //THIS MUST BE CHANGED
+			if (socket.id in chatterList && typeof(data) == 'object' && data.length == 47600) //THIS MUST BE CHANGED
 			{
 				let date = new Date();
 				let pack = {

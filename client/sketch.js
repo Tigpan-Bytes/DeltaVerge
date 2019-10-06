@@ -108,8 +108,8 @@ let state = States.main;
 let lastMillis = 0;
 let typingMillis = 0;
 
-const pictureWidth = 220;
-const pictureHeight = 130;
+const pictureWidth = 280;
+const pictureHeight = 170;
 
 let isDrawingOpen = false;
 let forceFullScroll = -1;
@@ -1160,16 +1160,16 @@ function mousePressed()
                 if (!sameColor(originColor, penColor))
                 {
                     let frontier = new Array();
-                    frontier.unshift({x: realX, y: realY});
+                    frontier.unshift({x: realX, y: realY, dir: -1});
                     pictureImage.set(realX, realY, penColor);
 
                     while (frontier.length > 0)
                     {
                         let newF = frontier.pop();
-                        if (newF.x > 0 && sameColor(pictureImage.get(newF.x - 1, newF.y), originColor)) { pictureImage.set(newF.x - 1, newF.y, penColor); frontier.unshift({x: newF.x - 1, y: newF.y}); }
-                        if (newF.y > 0 && sameColor(pictureImage.get(newF.x, newF.y - 1), originColor)) { pictureImage.set(newF.x, newF.y - 1, penColor); frontier.unshift({x: newF.x, y: newF.y - 1}); }
-                        if (newF.x < pictureWidth - 1 && sameColor(pictureImage.get(newF.x + 1, newF.y), originColor)) { pictureImage.set(newF.x + 1, newF.y, penColor); frontier.unshift({x: newF.x + 1, y: newF.y}); }
-                        if (newF.y < pictureHeight - 1 && sameColor(pictureImage.get(newF.x, newF.y + 1), originColor)) { pictureImage.set(newF.x, newF.y + 1, penColor); frontier.unshift({x: newF.x, y: newF.y + 1}); }
+                        if (newF.dir != 2 && newF.x > 0 && sameColor(pictureImage.get(newF.x - 1, newF.y), originColor)) { pictureImage.set(newF.x - 1, newF.y, penColor); frontier.unshift({x: newF.x - 1, y: newF.y, dir: 0}); }
+                        if (newF.dir != 3 && newF.y > 0 && sameColor(pictureImage.get(newF.x, newF.y - 1), originColor)) { pictureImage.set(newF.x, newF.y - 1, penColor); frontier.unshift({x: newF.x, y: newF.y - 1, dir: 1}); }
+                        if (newF.dir != 0 && newF.x < pictureWidth - 1 && sameColor(pictureImage.get(newF.x + 1, newF.y), originColor)) { pictureImage.set(newF.x + 1, newF.y, penColor); frontier.unshift({x: newF.x + 1, y: newF.y, dir: 2}); }
+                        if (newF.dir != 1 && newF.y < pictureHeight - 1 && sameColor(pictureImage.get(newF.x, newF.y + 1), originColor)) { pictureImage.set(newF.x, newF.y + 1, penColor); frontier.unshift({x: newF.x, y: newF.y + 1, dir: 3}); }
                     }
                 }
                 pictureImage.updatePixels();
