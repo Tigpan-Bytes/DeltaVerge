@@ -7,6 +7,7 @@ let dataBuffer;
 const single = function(p)
 {
     let canv;
+    let pic;
 
     p.setup = function()
     {
@@ -15,26 +16,25 @@ const single = function(p)
         canv.parent(chatBox);
         canv.style('position', 'relative'); 
 
+        pic = p.createImage(pictureWidth, pictureHeight);
+        pic.loadPixels();
+        for (let i = 0; i < dataBuffer.image.length; i++)
+        {
+            pic.set(p.floor(i / pictureHeight), i % pictureHeight, dataBuffer.image[i] ? [255, 255, 255, 255] : [0, 0, 0, 255]);
+        }
+        pic.updatePixels();
         //p.image(pic, 0, 0);
         
         p.background(0);
     };
-
-    /*
+    
     p.create = function(pic)
     {
-        p.image(pic, 0, 0, pictureWidth, pictureHeight); 
-    }*/
+        p.image(pic, 0, 0); 
+    };
 
     p.draw = function() 
     {
-        let pic = p.createImage(pictureWidth, pictureHeight);
-        pic.loadPixels();
-        for (let i = 0; i < pictureWidth * pictureHeight; i++)
-        {
-            pic.set(p.floor(i / pictureHeight), i % pictureHeight, [p.floor(i / pictureHeight), i % pictureHeight, 255, 255]);
-        }
-        pic.updatePixels();
         p.image(pic, 0, 0);
     };
 }
@@ -479,7 +479,7 @@ const main = function(p)
         pictureButton = p.createImg('palette.png');
         pictureButton.size(80, 80)
         pictureButton.mouseClicked(function(){
-            if (tempRank == 'guest')
+            if (tempRank == 'guest' && false)
             {
                 chatBox.html('\n<b>You need an account to draw pictures.</b>', true);
                 chatBox.html('\n<b>Refresh the page or leave the room and logout to create an account.</b>', true);
@@ -969,16 +969,19 @@ const main = function(p)
 
         drawings.push(new p5(single));
 
-        
+        /*
         let pic = p.createImage(pictureWidth, pictureHeight);
         pic.loadPixels();
         for (let i = 0; i < data.image.length; i++)
         {
             pic.set(p.floor(i / pictureHeight), i % pictureHeight, data.image[i] ? [255, 255, 255, 255] : [0, 0, 0, 255]);
         }
-        pic.updatePixels(); 
+        pic.updatePixels();  */
 
-        drawings[drawings.length - 1].create(pic); 
+        for (let i = 0; i < drawings.length; ++i)
+        {
+            drawings.create();
+        } //Keep this, it calls a function that doesn't exist but makes everything work. thanks javascript
 
         chatBox.html("\n ", true);
 
