@@ -45,7 +45,7 @@
   },
   "BreezyBuck": {
     "hash": "$2b$12$rfdfiPTZ02viu36NrR199.KXoF0Z2sKNSwyPh9KB1Dv0NRd..Pxli",
-    "rank": "reg"
+    "rank": "mod"
   },
   "Youguysaredumbasses": {
     "hash": "$2b$12$wGC/B398rtnx24bgXrRGQ.gyulbOkp0qyvIOirjz29XTKHy7Sxkiy",
@@ -89,6 +89,30 @@
   },
   "daddy": {
     "hash": "$2b$12$P4.hq/IYiMGCEFgBYqqVBuF0IsG9cthgmVWnpa7I5mJ90PMrI7msm",
+    "rank": "reg"
+  },
+  "nootnoot": {
+    "hash": "$2b$12$T5afiRj.hUDPKl6OO5NTAues6/.PJWzUOcYGHM5xvJyP6VjS2kpsK",
+    "rank": "reg"
+  },
+  "Gamer": {
+    "hash": "$2b$12$fjr5Bo4qj4banSTN6OvS8um95pdYjXznB8fRcK5NKvWrgfTbs9C3W",
+    "rank": "reg"
+  },
+  "yoo": {
+    "hash": "$2b$12$kfKrDsSrhz4JIgbFYJ5iHuw.xwdjn5Yxlnt0Fy3LPJe3oMi71O2Za",
+    "rank": "reg"
+  },
+  "Sugma_Richards": {
+    "hash": "$2b$12$13a5hdOdr68RqBpHAkEaceiUh9rD4vzABtfdWqVsOxikVCI47OEVi",
+    "rank": "reg"
+  },
+  "NabRah": {
+    "hash": "$2b$12$XksNnJpYDRhyOIXKNcY37eNDbhPq1jVt9WMbp6pnwy8En8qeBtZva",
+    "rank": "mod"
+  },
+  "rook": {
+    "hash": "$2b$12$lFsjPEM0aCom.RVNcaOEP.RPQthEWqTTakQHRp9vjMM4FeZqEjpOW",
     "rank": "reg"
   }
 }
