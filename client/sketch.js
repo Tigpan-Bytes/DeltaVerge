@@ -976,6 +976,7 @@ function addDrawing(data)
 
     // set the img.src to the canvas data url
     image.src = canvas.toDataURL();
+    image.setAttribute('class', 'drawing');
 
     // append the new img object to the page
     chatBox.html("\n", true);
