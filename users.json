@@ -23,10 +23,6 @@
     "hash": "$2b$12$UFZEbt/YAtjV1V9pA.ZGS.qb70tR502PHDxyrECa3JIFzMANQqWey",
     "rank": "reg"
   },
-  "Medkit": {
-    "hash": "$2b$12$wLYbTlH4zhDVuR.YAK1LS.qmdtXzhx5bK92JakQHW8h/Xoq5kvJWG",
-    "rank": "reg"
-  },
   "TestRankUp": {
     "hash": "$2b$12$iasRKwG0AGxfAoDEwRuFUuDDVO5j0.qmUCod91hX26hbP.a4P/g4O",
     "rank": "+"
@@ -53,7 +49,7 @@
   },
   "OrangeIcePop": {
     "hash": "$2b$12$g6pmut2D266eFm3C7T5lHOj.mSsJA7sa459hEfeIvqQIf8RgE/kTa",
-    "rank": "+"
+    "rank": "mod"
   },
   "Brolypoly": {
     "hash": "$2b$12$2uEtMJ2lHUaw5LY7UdBTou6V3eGOfwNHCfBe6Lp1Fcqkep99nsxiO",
@@ -114,5 +110,13 @@
   "rook": {
     "hash": "$2b$12$lFsjPEM0aCom.RVNcaOEP.RPQthEWqTTakQHRp9vjMM4FeZqEjpOW",
     "rank": "reg"
+  },
+  "haydenshort": {
+    "hash": "$2b$12$vsEgzPwyXMTPcpx.bArH8.IUH2rm6FpkvXwAz4w8ATxvN8nLkaYPa",
+    "rank": "reg"
+  },
+  "KaiserMedkit": {
+    "hash": "$2b$12$xi/mWoaXQpqQi1IzyIVH5uz09txsYDfTJ.v793k4Wl332KjsR/MB2",
+    "rank": "mod"
   }
 }
