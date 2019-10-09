@@ -530,8 +530,7 @@ function createChatRoom()
 
     typingText = createElement('typing', 'Nobody is typing at the moment...');
 
-    chatBox = createElement('chatbox', '<i>&nbsp;&nbsp;&nbsp;&nbsp;Welcome to <b>Room ' + room + '</b>! Type, then press enter to chat. Alternatively, click in the bottom right to draw a picture</i>. \n');
-    addCommandLine();
+    chatBox = createElement('chatbox', '<i>&nbsp;&nbsp;&nbsp;&nbsp;Welcome to <b>Room ' + room + '</b>! Type, then press enter to chat. Alternatively, click in the bottom right to draw a picture.\n\nVersion - <b>0.1.0</b>: Darkmode! Do <b>/style dark</b>!\n\nType <b>/help</b> to view what commands you can use.</i>\n ');
 
     userList = createElement('listbox', '<i>User List:\n</i>');
 
@@ -572,6 +571,8 @@ function addCommandLine()
     {
         chatBox.html('\nYour rank allows you to use these commands:\n', true);
         chatBox.html('\n&nbsp;&nbsp;<b>=== Basic Commands ===</b>\n', true);
+        chatBox.html('/style [STYLE (light or dark)]\n', true);
+        chatBox.html('&nbsp;&nbsp;=> Changes the webpage to either light mode (default) or dark mode.\n', true);
         chatBox.html('/whisper [NAME] [MESSAGE]\n', true);
         chatBox.html('&nbsp;&nbsp;=> Silently messages the user so nobody else can see, works across different and same rooms.\n', true);
         if (tempRank == 'admin' || tempRank == 'mod')
@@ -583,6 +584,10 @@ function addCommandLine()
             chatBox.html('&nbsp;&nbsp;=> PERMANENTLY deletes the account of the given user.\n', true);
             chatBox.html('\nList of valid ranks: reg, +, ++, mod, admin, guest (guest cannot be changed or set)\n\n', true);
         }
+    }
+    else
+    {
+        chatBox.html("\nAs a guest you don't have access to any commands or extras (like darkmode), create an account to gain access to these. \n", true);
     }
 }
 
@@ -1087,7 +1092,7 @@ function draw()
                     let realX = mouseX * (pictureWidth / pictureCanvas.width);
                     let realY = mouseY * (pictureHeight / pictureCanvas.height);
                     let diffX = (pmouseX * (pictureWidth / pictureCanvas.width)) - realX;
-                    let diffY = (pmouseY * (pictureWidth / pictureCanvas.width)) - realY;
+                    let diffY = (pmouseY * (pictureHeight / pictureCanvas.height)) - realY;
                     let iterations = sqrt((diffX * diffX) + (diffY * diffY));
 
                     pictureImage.loadPixels();
@@ -1199,8 +1204,40 @@ function keyPressed()
     {
         textInputField.value(textInputField.value().replace(/^\s+|\s+$/g, '')); //remove start and end
         textInputField.value(textInputField.value().replace(/\n\s*\n/g, '\n')); //remove duplicates
-    
-        if (textInputField.value() != '')
+
+        if (textInputField.value().length >= 1500)
+        {
+            chatBox.html('<b>\nYour message is too long please keep it under 1500 characters.\n </b>', true);
+            fullScroll();
+        }
+        else if (textInputField.value().split(/\r\n|\r|\n/).length >= 20)
+        {
+            chatBox.html('<b>\nYour message is too long please keep it under 20 lines.\n </b>', true);
+            fullScroll();
+        }
+        if (textInputField.value() == '/help')
+        {
+            addCommandLine();
+            fullScroll();
+            resetFields = true;
+        }
+        else if (tempRank != 'guest' && textInputField.value().split(' ')[0] == '/style')
+        {
+            if (textInputField.value().split(' ')[1] == 'light')
+            {
+                document.getElementById('pagestyle').setAttribute('href', 'css/light.css');
+            }
+            else if (textInputField.value().split(' ')[1] == 'dark')
+            {
+                document.getElementById('pagestyle').setAttribute('href', 'css/dark.css');
+            }
+            else
+            {
+                chatBox.html('\nYour options for this command are: <b>light</b> or <b>dark</b>.\n', true);
+            }
+            resetFields = true;
+        }
+        else if (textInputField.value() != '')
         {
             socket.emit('chat', textInputField.value());
             resetFields = true;

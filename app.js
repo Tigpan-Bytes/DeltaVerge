@@ -280,7 +280,7 @@ io.sockets.on('connection', function (socket) {
 					
 					let date = new Date();
 					let pack = {
-						spanner: '<span style="color: #080;">',
+						spanner: '<span class="join">', //join
 						time: getTime(date),
 						timeStamp: date.getTime(),
 						username: chatterList[socket.id].name,
@@ -397,7 +397,7 @@ io.sockets.on('connection', function (socket) {
 					{
 						let date = new Date();
 						let pack = {
-							spanner: '<span style="color: #300;">',
+							spanner: '<span class="needAccount">', //needAccount
 							time: getTime(date),
 							timeStamp: date.getTime(),
 							username: '',
@@ -410,7 +410,7 @@ io.sockets.on('connection', function (socket) {
 					{
 						let date = new Date();
 						let pack = {
-							spanner: '<span style="color: #700;">',
+							spanner: '<span class="cFailed">', // cFailed
 							time: getTime(date),
 							timeStamp: date.getTime(),
 							username: '',
@@ -525,7 +525,7 @@ function command(socket, message)
 				console.log('COMMAND: ' + chatter.name + ' - [' + chatter.rank +'] Whispered user ' + wisp.name + ": " + wMessage + " | Time: " + getSuperTime(date));
 
 				let pack = {
-					spanner: '<span style="color: #057;">',
+					spanner: '<span class="whisper">', //whisper
 					time: getTime(date),
 					timeStamp: date.getTime(),
 					username: chatter.name,
@@ -577,7 +577,7 @@ function command(socket, message)
 				console.log('COMMAND: ' + chatter.name + ' - [' + chatter.rank +'] Changed user ' + words[1] + "'s rank to " + words[2]+ " | Time: " + getSuperTime(date));
 
 				let pack = {
-					spanner: '<span style="color: #004;">',
+					spanner: '<span class="rank">', //rank
 					time: getTime(date),
 					timeStamp: date.getTime(),
 					username: words[1],
@@ -754,7 +754,7 @@ function announceDisconnect(chatter, special)
 	if (special == 'delete')
 	{
 		pack = {
-			spanner: '<span style="color: #f00;">',
+			spanner: '<span class="ban">', //ban
 			time: getTime(date),
 			timeStamp: date.getTime(),
 			username: chatter.name,
@@ -764,7 +764,7 @@ function announceDisconnect(chatter, special)
 	else
 	{
 		pack = {
-			spanner: '<span style="color: #800;">',
+			spanner: '<span class="disconnect">', //disconnect
 			time: getTime(date),
 			timeStamp: date.getTime(),
 			username: chatter.name,
