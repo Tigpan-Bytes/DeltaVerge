@@ -591,8 +591,8 @@ function createChatRoom()
     friendsButton = createImg('friends.png');
     friendsButton.size(40, 40);
     friendsButton.mouseClicked(function(){ 
-        chatBox.html('\n<b>Sorry bud, not implemented yet. Friends, and challenging them to games/minigames should come soon(ish).</b>\n ', true);
-        chatBox.html('\nUse the command <b>/propose [TYPE (bug, suggestion)] [MESSAGE]</b> to propose what games should be added first, I think pool/billiards will be first.\n ', true);
+        chatBox.html('\n<b>Sorry bud, not implemented yet. Friends and games/minigames should come soon(ish).</b>\n ', true);
+        chatBox.html('Use the command <b>/propose suggestion [MESSAGE]</b> to propose what games should be added first, I think pool/billiards will be first.\n ', true);
     });
     friendsButton.attribute('class', 'interact');
 
@@ -629,7 +629,7 @@ function addCommandLine()
         chatBox.html('<b>/whisper [NAME] [MESSAGE]</b>\n', true);
         chatBox.html('&nbsp;&nbsp;=> Silently messages the user so nobody else can see, works across different and same rooms.\n\n', true);
         chatBox.html('<b>/propose [TYPE (bug, suggestion)] [MESSAGE]</b>\n', true);
-        chatBox.html('&nbsp;&nbsp;=> Logs your suggestion later so that Tim can read and act on your proposals.\n\n', true);
+        chatBox.html('&nbsp;&nbsp;=> Logs your suggestion so that Tim (Tigpan/pictochat owner) can read and act on your proposals after school.\n\n', true);
         chatBox.html('<b>/notify [TYPE (enable, disable) (default enable)]\n', true);
         chatBox.html('&nbsp;&nbsp;=> Requests permission to display notifications or turns them off.\n\n ', true);
         if (tempRank == 'admin' || tempRank == 'mod')
