@@ -37,6 +37,24 @@ catch (err)
 	console.log("\nERROR: USER DATA CORRUPTED! RESTART SERVER!");
 }
 
+let proposalData;
+let proposals;
+
+try
+{
+	proposalData = fs.readFileSync('proposals.json');//TODO: Make registering, saving, and loading of accounts
+	proposals = JSON.parse(proposalData); 
+	console.log("\nProposal data loaded successfully.");
+}
+catch (err)
+{
+	console.log("\nERROR: PROPOSAL DATA CORRUPTED! RESTART SERVER!");
+	console.log("\nERROR: PROPOSAL DATA CORRUPTED! RESTART SERVER!");
+	console.log("\nERROR: PROPOSAL DATA CORRUPTED! RESTART SERVER!");
+	console.log("\nERROR: PROPOSAL DATA CORRUPTED! RESTART SERVER!");
+	console.log("\nERROR: PROPOSAL DATA CORRUPTED! RESTART SERVER!");
+}
+
 let app = express();
 let serv = require('http').Server(app);
 
@@ -60,7 +78,7 @@ let io = require('socket.io')(serv, {});
 
 try
 {
-io.sockets.on('connection', function (socket) {
+	io.sockets.on('connection', function (socket) {
 	socket.id = idIncrement++;
 	socketList[socket.id] = socket;
 
@@ -501,6 +519,49 @@ function command(socket, message)
 		let chatter = chatterList[socket.id];
 		message = message.substr(1);
 		let words = message.split(' ');
+		if (words.length >= 3 && words[0] == 'propose')
+		{
+			if (words[1] == 'bug' || words[1] == 'suggestion')
+			{
+				let wMessage = '';
+				for (let i = 2; i < words.length - 1; i++)
+				{
+					wMessage += words[i] + ' ';
+				}	
+				wMessage += words[words.length - 1];
+
+				let date = new Date();
+				console.log('COMMAND: User ' + chatter.name + " proposed a " + words[1] + ": " + wMessage + " | Time: " + getSuperTime(date));
+
+				if (chatter.name in proposals[words[1]])
+				{
+					proposals[words[1]][chatter.name].push(wMessage);
+				}
+				else
+				{
+					proposals[words[1]][chatter.name] = [wMessage];
+				}
+
+				fs.writeFile('proposals.json', JSON.stringify(proposals, null, 2), function(err){
+					if (err)
+					{
+						console.error(err);
+					}
+				});
+
+				let pack = {
+					spanner: '<span class="propose">', //whisper
+					time: getTime(date),
+					timeStamp: date.getTime(),
+					username: '',
+					message: 'Thank you for your proposal!',
+				};
+		
+				socket.emit('newChatAnnouncement', pack);
+
+				return true;
+			}
+		}
 		if (words.length >= 3 && words[0] == 'whisper')
 		{
 			let wisp = null;
