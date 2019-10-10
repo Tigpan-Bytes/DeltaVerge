@@ -1277,18 +1277,15 @@ function keyPressed()
         if (textInputField.value().length >= 2000)
         {
             chatBox.html('<b>\nYour message is too long please keep it under 2000 characters.\n </b>', true);
-            fullScroll();
         }
         else if (textInputField.value().split(/\r\n|\r|\n/).length >= 30)
         {
             chatBox.html('<b>\nYour message is too long please keep it under 30 lines.\n </b>', true);
-            fullScroll();
         }
 
         if (textInputField.value() == '/help')
         {
             addCommandLine();
-            fullScroll();
             resetFields = true;
         }
         else if (tempRank != 'guest' && textInputField.value().split(' ')[0] == '/notify')
@@ -1345,7 +1342,6 @@ function keyPressed()
             {
                 chatBox.html('\nYour options for this command are: <b>light</b> or <b>dark</b>.', true);
                 chatBox.html('\n/style [STYLE (light, dark)].\n ', true);
-                fullScroll();
             }
             resetFields = true;
         }
@@ -1360,7 +1356,6 @@ function keyPressed()
             {
                 chatBox.html('\nYour options for this command are: <b>bug</b> or <b>suggestion</b>.', true);
                 chatBox.html('\n/propose [TYPE (bug, suggestion)] [MESSAGE].\n ', true);
-                fullScroll();
             }
             resetFields = true;
         }
@@ -1369,5 +1364,6 @@ function keyPressed()
             socket.emit('chat', textInputField.value());
             resetFields = true;
         }
+        fullScroll();
     }
 }
