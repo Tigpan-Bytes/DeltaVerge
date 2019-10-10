@@ -1345,6 +1345,7 @@ function keyPressed()
             {
                 chatBox.html('\nYour options for this command are: <b>light</b> or <b>dark</b>.', true);
                 chatBox.html('\n/style [STYLE (light, dark)].\n ', true);
+                fullScroll();
             }
             resetFields = true;
         }
@@ -1359,6 +1360,7 @@ function keyPressed()
             {
                 chatBox.html('\nYour options for this command are: <b>bug</b> or <b>suggestion</b>.', true);
                 chatBox.html('\n/propose [TYPE (bug, suggestion)] [MESSAGE].\n ', true);
+                fullScroll();
             }
             resetFields = true;
         }
