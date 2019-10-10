@@ -10,6 +10,11 @@ canvas{
 }
 
 /* Server spanners */
+
+.propose {
+    color: #660;
+}
+
 .join {
     color: #080;
 }

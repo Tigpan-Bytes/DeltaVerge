@@ -69,7 +69,9 @@ let userList;
 let chatBoxHeight;
 let welcomeText;
 let typingText;
+
 let lobbyButton;
+let friendsButton;
 
 //drawing
 let background;
@@ -107,12 +109,17 @@ let States = {
 let state = States.main;
 let lastMillis = 0;
 let typingMillis = 0;
+let isDarkMode = false;
 
 const pictureWidth = 280;
 const pictureHeight = 170;
 
 let isDrawingOpen = false;
 let forceFullScroll = -1;
+
+let notify;
+let stillOpen = false;
+let everNotify = true;
 
 function setup()
 {
@@ -165,6 +172,41 @@ function setup()
     socket.on('pwSuccess', function(){
         successText.html('Password change was successful.');
     });
+}
+
+function notification(message)
+{
+    if (!focused && !stillOpen && everNotify)
+    {
+        var options = {
+            silent: true
+        }
+
+        if (!("Notification" in window)) {
+            alert("This browser does not support desktop notification");
+        }
+        else if (Notification.permission === "granted") 
+        {
+            notify = new Notification(message, options);
+
+            stillOpen = true;
+            notify.onclose = function(){ stillOpen = false; };
+            setTimeout(notify.close.bind(notify), 4000);
+        }
+        else if (Notification.permission !== "denied") 
+        {
+            Notification.requestPermission().then(function (permission) {
+                if (permission === "granted") 
+                {
+                    notify = new Notification(message, options);
+
+                    stillOpen = true;
+                    notify.onclose = function(){ stillOpen = false; };
+                    setTimeout(notify.close.bind(notify), 4000);
+                }
+            });
+        }
+    }
 }
 
 function kill(message)
@@ -530,7 +572,9 @@ function createChatRoom()
 
     typingText = createElement('typing', 'Nobody is typing at the moment...');
 
-    chatBox = createElement('chatbox', '<i>&nbsp;&nbsp;&nbsp;&nbsp;Welcome to <b>Room ' + room + '</b>! Type, then press enter to chat. Alternatively, click in the bottom right to draw a picture.\n\nVersion - <b>0.1.0</b>: Darkmode! Do <b>/style dark</b>!\n\nType <b>/help</b> to view what commands you can use.</i>\n ');
+    chatBox = createElement('chatbox', '<i>&nbsp;&nbsp;&nbsp;&nbsp;Welcome to <b>Room ' + room + '</b>! Type, then press enter to chat. Alternatively, click in the bottom right to draw a picture.\n\nVersion - <b>0.1.1</b>:</i>', true); 
+    chatBox.html('\n<i>=> Notifications! Do <b>/notify</b>!</i>', true);
+    chatBox.html('\n<i>=> Bug Reports and Suggestions! Do <b>/propose</b>!\n\nType <b>/help</b> to view what commands you can use.</i>\n ', true);
 
     userList = createElement('listbox', '<i>User List:\n</i>');
 
@@ -544,6 +588,14 @@ function createChatRoom()
     });
     lobbyButton.size(170, 40);
 
+    friendsButton = createImg('friends.png');
+    friendsButton.size(40, 40);
+    friendsButton.mouseClicked(function(){ 
+        chatBox.html('\n<b>Sorry bud, not implemented yet. Friends, and challenging them to games/minigames should come soon(ish).</b>\n ', true);
+        chatBox.html('\nUse the command <b>/propose [TYPE (bug, suggestion)] [MESSAGE]</b> to propose what games should be added first, I think pool/billiards will be first.\n ', true);
+    });
+    friendsButton.attribute('class', 'interact');
+
     lastChatName = '';
 
     windowResized();
@@ -552,14 +604,15 @@ function createChatRoom()
 function resetPicture()
 {
     pen = 2;
-    penColor = [0, 0, 0, 255];
+    penColor = isDarkMode ? [255, 255, 255, 255] : [0, 0, 0, 255];
+    let usedColors = isDarkMode ? [0, 0, 0, 255] : [255, 255, 255, 255];
 
     pictureImage.loadPixels();
     for (let x = 0; x < pictureImage.width; x++) 
     {
         for (let y = 0; y < pictureImage.height; y++) 
         {
-            pictureImage.set(x, y, [255, 255, 255, 255]);
+            pictureImage.set(x, y, usedColors);
         }
     }
     pictureImage.updatePixels();
@@ -570,24 +623,28 @@ function addCommandLine()
     if (tempRank != 'guest')
     {
         chatBox.html('\nYour rank allows you to use these commands:\n', true);
-        chatBox.html('\n&nbsp;&nbsp;<b>=== Basic Commands ===</b>\n', true);
-        chatBox.html('/style [STYLE (light or dark)]\n', true);
-        chatBox.html('&nbsp;&nbsp;=> Changes the webpage to either light mode (default) or dark mode.\n', true);
-        chatBox.html('/whisper [NAME] [MESSAGE]\n', true);
-        chatBox.html('&nbsp;&nbsp;=> Silently messages the user so nobody else can see, works across different and same rooms.\n', true);
+        chatBox.html('\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>=== Basic Commands ===</b>\n', true);
+        chatBox.html('<b>/style [STYLE (light, dark)]</b>\n', true);
+        chatBox.html('&nbsp;&nbsp;=> Changes the webpage to either light mode (default) or dark mode.\n\n', true);
+        chatBox.html('<b>/whisper [NAME] [MESSAGE]</b>\n', true);
+        chatBox.html('&nbsp;&nbsp;=> Silently messages the user so nobody else can see, works across different and same rooms.\n\n', true);
+        chatBox.html('<b>/propose [TYPE (bug, suggestion)] [MESSAGE]</b>\n', true);
+        chatBox.html('&nbsp;&nbsp;=> Logs your suggestion later so that Tim can read and act on your proposals.\n\n', true);
+        chatBox.html('<b>/notify [TYPE (enable, disable) (default enable)]\n', true);
+        chatBox.html('&nbsp;&nbsp;=> Requests permission to display notifications or turns them off.\n\n ', true);
         if (tempRank == 'admin' || tempRank == 'mod')
         {
-            chatBox.html('\n&nbsp;&nbsp;<b>=== Admin/Mod Commands ===</b>\n', true);
-            chatBox.html('/rank [NAME] [RANK]\n', true);
-            chatBox.html('&nbsp;&nbsp;=> Changes the rank for the given user to the one specified.\n', true);
-            chatBox.html('/delete [NAME]\n', true);
+            chatBox.html('\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>=== Admin/Mod Commands ===</b>\n', true);
+            chatBox.html('<b>/rank [NAME] [RANK]</b>\n', true);
+            chatBox.html('&nbsp;&nbsp;=> Changes the rank for the given user to the one specified.\n\n', true);
+            chatBox.html('<b>/delete [NAME]</b>\n', true);
             chatBox.html('&nbsp;&nbsp;=> PERMANENTLY deletes the account of the given user.\n', true);
-            chatBox.html('\nList of valid ranks: reg, +, ++, mod, admin, guest (guest cannot be changed or set)\n\n', true);
+            chatBox.html('\nList of valid ranks: reg, +, ++, mod, admin, guest (guest cannot be changed or set)\n\n ', true);
         }
     }
     else
     {
-        chatBox.html("\nAs a guest you don't have access to any commands or extras (like darkmode), create an account to gain access to these. \n", true);
+        chatBox.html("\nAs a guest you don't have access to any commands or extras (like dark mode), create an account to gain access to these.\n  ", true);
     }
 }
 
@@ -727,13 +784,17 @@ function leavePasswordChange()
 
 function leaveRoom()
 {
+    stillOpen = false;
+
     textInputField.remove();
     pictureButton.remove();
     chatBox.remove();
     userList.remove();
     typingText.remove();
     welcomeText.remove();
+
     lobbyButton.remove();
+    friendsButton.remove();
 }
 
 function windowResized() 
@@ -839,7 +900,9 @@ function windowResized()
         chatBoxHeight = windowHeight - 80 - 32 - 48 - 8 - 24; // 8 for border
         typingText.position(0, windowHeight - (80 + 16 + 32));
         welcomeText.position(0,0);
+
         lobbyButton.position(windowWidth - 180, 8);
+        friendsButton.position(windowWidth - 180 - 48, 8);
 
         if (isDrawingOpen)
         {
@@ -910,6 +973,8 @@ function addChatMessage(data)
             chatBox.html("\n" + getMessageSpanner(data.rank) + data.message + "</span>\n ", true);
         }
     }
+
+    notification(data.username + ": " + data.message);
 
     lastChatName = data.username;
 
@@ -989,6 +1054,8 @@ function addDrawing(data)
     chatBox.elt.appendChild(image);
     chatBox.html("\n  ", true);
 
+    notification(data.username + " sent a drawing.");
+
     lastChatName = data.username;
 
     if (isTop)
@@ -1058,6 +1125,8 @@ function addChatAnnouncement(data)
     chatBox.html(chatBox.html().slice(0, chatBox.html().length - 2));
     chatBox.html("\n\n<i>" + data.spanner + data.time + " - " + data.username + data.message + "</i></span>\n ", true);
     lastChatName = '';
+
+    notification(data.username + data.message);
 
     if (isTop)
     {
@@ -1205,35 +1274,91 @@ function keyPressed()
         textInputField.value(textInputField.value().replace(/^\s+|\s+$/g, '')); //remove start and end
         textInputField.value(textInputField.value().replace(/\n\s*\n/g, '\n')); //remove duplicates
 
-        if (textInputField.value().length >= 1500)
+        if (textInputField.value().length >= 2000)
         {
-            chatBox.html('<b>\nYour message is too long please keep it under 1500 characters.\n </b>', true);
+            chatBox.html('<b>\nYour message is too long please keep it under 2000 characters.\n </b>', true);
             fullScroll();
         }
-        else if (textInputField.value().split(/\r\n|\r|\n/).length >= 20)
+        else if (textInputField.value().split(/\r\n|\r|\n/).length >= 30)
         {
-            chatBox.html('<b>\nYour message is too long please keep it under 20 lines.\n </b>', true);
+            chatBox.html('<b>\nYour message is too long please keep it under 30 lines.\n </b>', true);
             fullScroll();
         }
+
         if (textInputField.value() == '/help')
         {
             addCommandLine();
             fullScroll();
             resetFields = true;
         }
-        else if (tempRank != 'guest' && textInputField.value().split(' ')[0] == '/style')
+        else if (tempRank != 'guest' && textInputField.value().split(' ')[0] == '/notify')
         {
-            if (textInputField.value().split(' ')[1] == 'light')
+            if (textInputField.value().split(' ').length == 2 && textInputField.value().split(' ')[1] == 'disable')
             {
-                document.getElementById('pagestyle').setAttribute('href', 'css/light.css');
-            }
-            else if (textInputField.value().split(' ')[1] == 'dark')
-            {
-                document.getElementById('pagestyle').setAttribute('href', 'css/dark.css');
+                everNotify = false;
+                chatBox.html('\nAwww. Sorry for annoying you, please leave a suggestion using <b>/propose</b> on how we could improve. :(\n ', true); 
             }
             else
             {
-                chatBox.html('\nYour options for this command are: <b>light</b> or <b>dark</b>.\n', true);
+                if (Notification.permission === 'granted')
+                {
+                    if (!everNotify)
+                    {
+                        everNotify = true;
+                        chatBox.html('\nThank you for enabling notifications. :)\n ', true); 
+                    }
+                    else
+                    {
+                        chatBox.html('\nNotifications were already enabled. If you wanted to disable them do: <b>/notify disable</b>.\n ', true);
+                    }
+                }
+                else
+                {
+                    Notification.requestPermission(function(permission) { 
+                        if (permission === 'granted')
+                        {
+                            everNotify = true;
+                            chatBox.html('\nThank you for enabling notifications. :)\n ', true); 
+                        }
+                        else
+                        {
+                            chatBox.html('\nAwww, thats too bad. Please think about enabling me! :(\n ', true); 
+                        }
+                    });
+                }
+            }
+            resetFields = true;
+        }
+        else if (tempRank != 'guest' && textInputField.value().split(' ')[0] == '/style')
+        {
+            if (textInputField.value().split(' ').length == 2 && textInputField.value().split(' ')[1] == 'light')
+            {
+                document.getElementById('pagestyle').setAttribute('href', 'css/light.css');
+                isDarkMode = false;
+            }
+            else if (textInputField.value().split(' ').length == 2 && textInputField.value().split(' ')[1] == 'dark')
+            {
+                document.getElementById('pagestyle').setAttribute('href', 'css/dark.css');
+                isDarkMode = true;
+            }
+            else
+            {
+                chatBox.html('\nYour options for this command are: <b>light</b> or <b>dark</b>.', true);
+                chatBox.html('\n/style [STYLE (light, dark)].\n ', true);
+            }
+            resetFields = true;
+        }
+        else if (tempRank != 'guest' && textInputField.value().split(' ')[0] == '/propose')
+        {
+            if (textInputField.value().split(' ').length > 2 && (textInputField.value().split(' ')[1] == 'bug' || textInputField.value().split(' ')[1] == 'suggestion'))
+            {
+                socket.emit('chat', textInputField.value());
+                resetFields = true;
+            }
+            else
+            {
+                chatBox.html('\nYour options for this command are: <b>bug</b> or <b>suggestion</b>.', true);
+                chatBox.html('\n/propose [TYPE (bug, suggestion)] [MESSAGE].\n ', true);
             }
             resetFields = true;
         }
