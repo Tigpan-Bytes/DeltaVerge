@@ -573,7 +573,7 @@ function createChatRoom()
     typingText = createElement('typing', 'Nobody is typing at the moment...');
 
     chatBox = createElement('chatbox', '<i>&nbsp;&nbsp;&nbsp;&nbsp;Welcome to <b>Room ' + room + '</b>! Type, then press enter to chat. Alternatively, click in the bottom right to draw a picture.\n\nVersion - <b>0.1.1</b>:</i>', true); 
-    chatBox.html('\n<i>=> Notifications! Do <b>/notify</b>!</i>', true);
+    chatBox.html('\n<i>=> Notifications! Do <b>/notify</b>!</i>. <b>CURRENTLY BROKEN, WILL WORK SOON.</b>', true);
     chatBox.html('\n<i>=> Bug Reports and Suggestions! Do <b>/propose</b>!\n\nType <b>/help</b> to view what commands you can use.</i>\n ', true);
 
     userList = createElement('listbox', '<i>User List:\n</i>');
