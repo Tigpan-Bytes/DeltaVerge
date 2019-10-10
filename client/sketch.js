@@ -591,8 +591,9 @@ function createChatRoom()
     friendsButton = createImg('friends.png');
     friendsButton.size(40, 40);
     friendsButton.mouseClicked(function(){ 
-        chatBox.html('\n<b>Sorry bud, not implemented yet. Friends and games/minigames should come soon(ish).</b>\n ', true);
+        chatBox.html('\n<b>Sorry bud, not implemented yet. Friends and games/minigames should come soon(ish).</b>\n', true);
         chatBox.html('Use the command <b>/propose suggestion [MESSAGE]</b> to propose what games should be added first, I think pool/billiards will be first.\n ', true);
+        fullScroll();
     });
     friendsButton.attribute('class', 'interact');
 
@@ -1294,7 +1295,6 @@ function keyPressed()
             {
                 everNotify = false;
                 chatBox.html('\nAwww. Sorry for annoying you, please leave a suggestion using <b>/propose</b> on how we could improve. :(\n ', true); 
-                fullScroll();
             }
             else
             {
@@ -1304,12 +1304,10 @@ function keyPressed()
                     {
                         everNotify = true;
                         chatBox.html('\nThank you for enabling notifications. :)\n ', true); 
-                        fullScroll();
                     }
                     else
                     {
                         chatBox.html('\nNotifications were already enabled. If you wanted to disable them do: <b>/notify disable</b>.\n ', true);
-                        fullScroll();
                     }
                 }
                 else
@@ -1319,12 +1317,10 @@ function keyPressed()
                         {
                             everNotify = true;
                             chatBox.html('\nThank you for enabling notifications. :)\n ', true); 
-                            fullScroll();
                         }
                         else
                         {
                             chatBox.html('\nAwww, thats too bad. Please think about enabling me! :(\n ', true); 
-                            fullScroll();
                         }
                     });
                 }
