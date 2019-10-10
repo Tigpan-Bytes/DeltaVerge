@@ -67,10 +67,6 @@
     "hash": "$2b$12$J1rmzrQZtlvWJeCMgvBDhOB16Slsxch3LTIMxykF/jcNAsXhzq79C",
     "rank": "reg"
   },
-  "Anu": {
-    "hash": "$2b$12$QI.8JRp4w8dS8u5jXo5NAuXuYIvGLqZhDyk6MsMbHP0o.Ve5dPNzi",
-    "rank": "mod"
-  },
   "Yoop": {
     "hash": "$2b$12$QkIbcb174WNILetIt0mTket/C/.YColTgTg9PueEQne1XF0a8/VI.",
     "rank": "mod"
@@ -117,6 +113,10 @@
   },
   "KaiserMedkit": {
     "hash": "$2b$12$xi/mWoaXQpqQi1IzyIVH5uz09txsYDfTJ.v793k4Wl332KjsR/MB2",
+    "rank": "mod"
+  },
+  "Anu": {
+    "hash": "$2b$12$Q2MQ5t./BBsHvCOK0vBApeFGMkb9GWwlBLMX7HZ7fjDDG6wDdT.pO",
     "rank": "mod"
   }
 }
