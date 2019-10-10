@@ -1294,6 +1294,7 @@ function keyPressed()
             {
                 everNotify = false;
                 chatBox.html('\nAwww. Sorry for annoying you, please leave a suggestion using <b>/propose</b> on how we could improve. :(\n ', true); 
+                fullScroll();
             }
             else
             {
@@ -1303,10 +1304,12 @@ function keyPressed()
                     {
                         everNotify = true;
                         chatBox.html('\nThank you for enabling notifications. :)\n ', true); 
+                        fullScroll();
                     }
                     else
                     {
                         chatBox.html('\nNotifications were already enabled. If you wanted to disable them do: <b>/notify disable</b>.\n ', true);
+                        fullScroll();
                     }
                 }
                 else
@@ -1316,10 +1319,12 @@ function keyPressed()
                         {
                             everNotify = true;
                             chatBox.html('\nThank you for enabling notifications. :)\n ', true); 
+                            fullScroll();
                         }
                         else
                         {
                             chatBox.html('\nAwww, thats too bad. Please think about enabling me! :(\n ', true); 
+                            fullScroll();
                         }
                     });
                 }
