@@ -1,5 +1,8 @@
 //https://git.coolaj86.com/coolaj86/greenlock-express.js/src/branch/master/examples/demo.js
 
+const HTTP_PORT = 80;
+const HTTPS_PORT = 8443;
+
 class Chatter
 {
 	constructor(id)
@@ -64,8 +67,8 @@ let sServ = require('https').createServer({
 
 app.use(express.static('client'));
 
-serv.listen(80);
-sServ.listen(443);
+serv.listen(HTTP_PORT);
+sServ.listen(HTTPS_PORT);
 
 printLanAddress();
 
@@ -1081,7 +1084,7 @@ function printLanAddress() //https://stackoverflow.com/questions/3653065/get-loc
 				return;
 			}
 
-			console.log("Running Lan Server over: " + ifname + " | " + iface.address + " | (80/443)");
+			console.log("Running Lan Server over: " + ifname + " | " + iface.address + " | (" + HTTP_PORT + " / " + HTTPS_PORT + ")");
 		});
 	});
 	console.log();//blank space
