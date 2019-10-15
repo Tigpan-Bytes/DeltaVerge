@@ -120,9 +120,24 @@ let forceFullScroll = -1;
 let notify;
 let stillOpen = false;
 let everNotify = true;
+let hasFocus = true;
+
+function checkPageFocus() 
+{
+    hasFocus = document.hasFocus();
+    if (hasFocus && document.title != 'Pictochat')
+    {
+        document.title = 'Pictochat';
+        document.getElementById("icon16").href = "/icons/norm/favicon-16x16.png";
+        document.getElementById("icon32").href = "/icons/norm/favicon-32x32.png";
+        document.getElementById("icon96").href = "/icons/norm/favicon-96x96.png";
+    }
+}
 
 function setup()
 {
+    setInterval(checkPageFocus, 500);
+
     createMain();
 
     socket = io();
@@ -178,8 +193,13 @@ function setup()
 
 function notification(message)
 {
-    if (!focused && !stillOpen && everNotify)
+    if (!hasFocus && !stillOpen && everNotify)
     {
+        document.title = message;
+        document.getElementById("icon16").href = "/icons/alert/favicon-16x16.png";
+        document.getElementById("icon32").href = "/icons/alert/favicon-32x32.png";
+        document.getElementById("icon96").href = "/icons/alert/favicon-96x96.png";
+
         var options = {
             silent: true
         }
@@ -1151,7 +1171,7 @@ function draw()
         if (lastMillis < millis() - 1500)
         {
             lastMillis = millis();
-            socket.emit('status', focused)
+            socket.emit('status', hasFocus)
         }
 
         if (isDrawingOpen)
