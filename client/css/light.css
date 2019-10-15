@@ -4,9 +4,11 @@ body, html {
     background-color: #bbbbbb;
 }
 
-canvas{
+canvas {
     display:inline-block;
     z-index: 1;
+    border: 2px solid #bbbbbb;
+    border-radius: 2px;
 }
 
 /* Server spanners */
