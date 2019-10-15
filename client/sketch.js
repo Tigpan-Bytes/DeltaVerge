@@ -128,6 +128,9 @@ function checkPageFocus()
     if (hasFocus && document.title != 'Pictochat')
     {
         document.title = 'Pictochat';
+        document.getElementById("icon16").href = "/icons/norm/favicon-16x16.png";
+        document.getElementById("icon32").href = "/icons/norm/favicon-32x32.png";
+        document.getElementById("icon96").href = "/icons/norm/favicon-96x96.png";
     }
 }
 
@@ -191,6 +194,9 @@ function notification(message)
     if (!hasFocus && !stillOpen && everNotify)
     {
         document.title = message;
+        document.getElementById("icon16").href = "/icons/alert/favicon-16x16.png";
+        document.getElementById("icon32").href = "/icons/alert/favicon-32x32.png";
+        document.getElementById("icon96").href = "/icons/alert/favicon-96x96.png";
 
         var options = {
             silent: true
@@ -1334,7 +1340,7 @@ function keyPressed()
                         }
                         else
                         {
-                            chatBox.html('\nAwww, thats too bad. Please think about enabling me! :(\n ', true); 
+                            chatBox.html('\nIt seems you already rejected notifications. If you want them please refresh the page. Please think about enabling me! :(\n ', true); 
                         }
                     });
                 }
