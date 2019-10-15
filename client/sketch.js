@@ -172,6 +172,8 @@ function setup()
     socket.on('pwSuccess', function(){
         successText.html('Password change was successful.');
     });
+
+    document.getElementById('defaultCanvas0').remove();
 }
 
 function notification(message)
@@ -573,7 +575,7 @@ function createChatRoom()
     typingText = createElement('typing', 'Nobody is typing at the moment...');
 
     chatBox = createElement('chatbox', '<i>&nbsp;&nbsp;&nbsp;&nbsp;Welcome to <b>Room ' + room + '</b>! Type, then press enter to chat. Alternatively, click in the bottom right to draw a picture.\n\nVersion - <b>0.1.1</b>:</i>', true); 
-    chatBox.html('\n<i>=> Notifications! Do <b>/notify</b>!</i>. <b>CURRENTLY BROKEN, WILL WORK SOON.</b>', true);
+    chatBox.html("\n<i>=> Notifications! Do <b>/notify</b> to enable/disable</i>.", true);
     chatBox.html('\n<i>=> Bug Reports and Suggestions! Do <b>/propose</b>!\n\nType <b>/help</b> to view what commands you can use.</i>\n ', true);
 
     userList = createElement('listbox', '<i>User List:\n</i>');
@@ -631,7 +633,7 @@ function addCommandLine()
         chatBox.html('&nbsp;&nbsp;=> Silently messages the user so nobody else can see, works across different and same rooms.\n\n', true);
         chatBox.html('<b>/propose [TYPE (bug, suggestion)] [MESSAGE]</b>\n', true);
         chatBox.html('&nbsp;&nbsp;=> Logs your suggestion so that Tim (Tigpan/pictochat owner) can read and act on your proposals after school.\n\n', true);
-        chatBox.html('<b>/notify [TYPE (enable, disable) (default enable)]\n', true);
+        chatBox.html('<b>/notify [TYPE (enable, disable)]\n', true);
         chatBox.html('&nbsp;&nbsp;=> Requests permission to display notifications or turns them off.\n\n ', true);
         if (tempRank == 'admin' || tempRank == 'mod')
         {
@@ -1296,34 +1298,16 @@ function keyPressed()
                 everNotify = false;
                 chatBox.html('\nAwww. Sorry for annoying you, please leave a suggestion using <b>/propose</b> on how we could improve. :(\n ', true); 
             }
+            else if (textInputField.value().split(' ').length == 2 && textInputField.value().split(' ')[1] == 'enable')
+            {
+                chatBox.html('\nThank you for enabling notifications. :)\n ', true); 
+                everNotify = true;
+                Notification.requestPermission();
+            }
             else
             {
-                if (Notification.permission === 'granted')
-                {
-                    if (!everNotify)
-                    {
-                        everNotify = true;
-                        chatBox.html('\nThank you for enabling notifications. :)\n ', true); 
-                    }
-                    else
-                    {
-                        chatBox.html('\nNotifications were already enabled. If you wanted to disable them do: <b>/notify disable</b>.\n ', true);
-                    }
-                }
-                else
-                {
-                    Notification.requestPermission(function(permission) { 
-                        if (permission === 'granted')
-                        {
-                            everNotify = true;
-                            chatBox.html('\nThank you for enabling notifications. :)\n ', true); 
-                        }
-                        else
-                        {
-                            chatBox.html('\nAwww, thats too bad. Please think about enabling me! :(\n ', true); 
-                        }
-                    });
-                }
+                chatBox.html('\nYour options for this command are: <b>enable</b> or <b>disable</b>.', true);
+                chatBox.html('\n/notify [TYPE (enable, disable)].\n ', true);
             }
             resetFields = true;
         }
