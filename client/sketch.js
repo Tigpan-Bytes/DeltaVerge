@@ -120,9 +120,21 @@ let forceFullScroll = -1;
 let notify;
 let stillOpen = false;
 let everNotify = true;
+let hasFocus = true;
+
+function checkPageFocus() 
+{
+    hasFocus = document.hasFocus();
+    if (hasFocus && document.title != 'Pictochat')
+    {
+        document.title = 'Pictochat';
+    }
+}
 
 function setup()
 {
+    setInterval(checkPageFocus, 500);
+
     createMain();
 
     socket = io();
@@ -176,8 +188,10 @@ function setup()
 
 function notification(message)
 {
-    if (!focused && !stillOpen && everNotify)
+    if (!hasFocus && !stillOpen && everNotify)
     {
+        document.title = message;
+
         var options = {
             silent: true
         }
@@ -1149,7 +1163,7 @@ function draw()
         if (lastMillis < millis() - 1500)
         {
             lastMillis = millis();
-            socket.emit('status', focused)
+            socket.emit('status', hasFocus)
         }
 
         if (isDrawingOpen)
