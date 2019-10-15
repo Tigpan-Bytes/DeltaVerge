@@ -187,8 +187,6 @@ function setup()
     socket.on('pwSuccess', function(){
         successText.html('Password change was successful.');
     });
-
-    document.getElementById('defaultCanvas0').remove();
 }
 
 function notification(message)
