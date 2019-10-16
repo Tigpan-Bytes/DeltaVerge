@@ -1335,9 +1335,9 @@ function keyPressed()
         {
             chatBox.html('<b>\nYour message is too long please keep it under 20 lines.\n </b>', true);
         }
-        else if (millis - 2000 < lastMessageMillis)
+        else if (millis() - 1500 < lastMessageMillis)
         {
-            chatBox.html('<b>\nYou are sending messages too fast, please wait 2 seconds between messages.\n </b>', true);
+            chatBox.html('<b>\nYou are sending messages too fast, please wait 1.5 seconds between messages.\n </b>', true);
         }
         else
         {
