@@ -134,5 +134,9 @@
   "Anu": {
     "hash": "$2b$12$8llnw4sNnAzxKexcR1rTiOqK89vzwmwE7DIK8uGDCrtNXrAA2IgWO",
     "rank": "mod"
+  },
+  "new": {
+    "hash": "$2b$12$xOS/01DzxscaUKUgxHKZiu0nFMx4tDBvMwyf.iSu/mPnpqGb2u6B2",
+    "rank": "reg"
   }
 }
