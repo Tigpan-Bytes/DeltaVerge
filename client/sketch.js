@@ -121,12 +121,14 @@ let notify;
 let stillOpen = false;
 let everNotify = true;
 let hasFocus = true;
+let notifyMessage = 'Pictochat';
 
 function checkPageFocus() 
 {
     hasFocus = document.hasFocus();
-    if (hasFocus && document.title != 'Pictochat')
+    if (hasFocus && notifyMessage != 'Pictochat')
     {
+        notifyMessage = 'Pictochat';
         document.title = 'Pictochat';
         document.getElementById("icon16").href = "/icons/norm/favicon-16x16.png";
         document.getElementById("icon32").href = "/icons/norm/favicon-32x32.png";
@@ -134,9 +136,22 @@ function checkPageFocus()
     }
 }
 
+function swapTitle()
+{
+    if (document.title != notifyMessage && notifyMessage != 'Pictochat')
+    {
+        document.title = notifyMessage;
+    }
+    else if (notifyMessage != 'Pictochat')
+    {
+        document.title = 'Pictochat';
+    }
+}
+
 function setup()
 {
     setInterval(checkPageFocus, 500);
+    setInterval(swapTitle, 750);
 
     createMain();
 
@@ -193,7 +208,9 @@ function notification(message)
 {
     if (!hasFocus && !stillOpen && everNotify)
     {
+        notifyMessage = message;
         document.title = message;
+
         document.getElementById("icon16").href = "/icons/alert/favicon-16x16.png";
         document.getElementById("icon32").href = "/icons/alert/favicon-32x32.png";
         document.getElementById("icon96").href = "/icons/alert/favicon-96x96.png";
@@ -592,7 +609,7 @@ function createChatRoom()
 
     typingText = createElement('typing', 'Nobody is typing at the moment...');
 
-    chatBox = createElement('chatbox', '<i>&nbsp;&nbsp;&nbsp;&nbsp;Welcome to <b>Room ' + room + '</b>! Type, then press enter to chat. Alternatively, click in the bottom right to draw a picture.\n\nVersion - <b>0.1.1</b>:</i>', true); 
+    chatBox = createElement('chatbox', '<i>&nbsp;&nbsp;&nbsp;&nbsp;Welcome to <b>Room ' + room + '</b>! Type, then press enter to chat. Alternatively, click in the bottom right to draw a picture.\n\nVersion - <b>0.1.2</b>:</i>', true); 
     chatBox.html("\n<i>=> Notifications! Do <b>/notify</b> to enable/disable</i>.", true);
     chatBox.html('\n<i>=> Bug Reports and Suggestions! Do <b>/propose</b>!\n\nType <b>/help</b> to view what commands you can use.</i>\n ', true);
 
