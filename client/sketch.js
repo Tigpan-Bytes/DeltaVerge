@@ -96,6 +96,7 @@ let penColor = [0, 0, 0, 255];
 let resetFields = false;
 let lastMessageTimeStamp = null;
 let lastPrintedMessageTimeStamp = null;
+let lastMessageMillis;
 let noChatDisplayTime = 120000;
 let forceDisplayTime = 240000;
 
@@ -354,9 +355,9 @@ function createLobby()
     aText  = createElement('chatterCount', aRoomCount + ' Chatters Active.');
     bButton = createButton('Join Room B.');
     bText  = createElement('chatterCount', bRoomCount + ' Chatters Active.');
-    cButton = createButton('Join Room C.');
+    cButton = createButton('Join Room C (<b>Accounts Only</b>).');
     cText  = createElement('chatterCount', cRoomCount + ' Chatters Active.');
-    dButton = createButton('Join Room D.');
+    dButton = createButton('Join Room D (<b>Ranked Only</b>).');
     dText  = createElement('chatterCount', dRoomCount + ' Chatters Active.');
 
     aButton.mouseClicked(function(){
@@ -374,18 +375,32 @@ function createLobby()
         createChatRoom();
     });
     cButton.mouseClicked(function(){
-        socket.emit('room', 'c');
-        room = "C";
-        leaveLobby();
-        state = States.room;
-        createChatRoom();
+        if (tempRank != 'guest' && tempRank != 'reg')
+        {
+            socket.emit('room', 'c');
+            room = "C";
+            leaveLobby();
+            state = States.room;
+            createChatRoom();
+        }
+        else
+        {
+            cButton.html('Room C is only for people who have an account and are not guests.')
+        }
     });
     dButton.mouseClicked(function(){
-        socket.emit('room', 'd');
-        room = "D";
-        leaveLobby();
-        state = States.room;
-        createChatRoom();
+        if (tempRank != 'guest' && tempRank != 'reg')
+        {
+            socket.emit('room', 'd');
+            room = "D";
+            leaveLobby();
+            state = States.room;
+            createChatRoom();
+        }
+        else
+        {
+            dButton.html('Room D is only for people who have the rank +, ++, mod, or admin.')
+        }
     });
 
     aButton.size((windowWidth / 3) * 2, 60);
@@ -1312,77 +1327,84 @@ function keyPressed()
         textInputField.value(textInputField.value().replace(/^\s+|\s+$/g, '')); //remove start and end
         textInputField.value(textInputField.value().replace(/\n\s*\n/g, '\n')); //remove duplicates
 
-        if (textInputField.value().length >= 2000)
+        if (textInputField.value().length >= 1500)
         {
-            chatBox.html('<b>\nYour message is too long please keep it under 2000 characters.\n </b>', true);
+            chatBox.html('<b>\nYour message is too long please keep it under 1500 characters.\n </b>', true);
         }
-        else if (textInputField.value().split(/\r\n|\r|\n/).length >= 30)
+        else if (textInputField.value().split(/\r\n|\r|\n/).length >= 20)
         {
-            chatBox.html('<b>\nYour message is too long please keep it under 30 lines.\n </b>', true);
+            chatBox.html('<b>\nYour message is too long please keep it under 20 lines.\n </b>', true);
         }
-
-        if (textInputField.value() == '/help')
+        else if (millis - 2000 < lastMessageMillis)
         {
-            addCommandLine();
-            resetFields = true;
+            chatBox.html('<b>\nYou are sending messages too fast, please wait 2 seconds between messages.\n </b>', true);
         }
-        else if (tempRank != 'guest' && textInputField.value().split(' ')[0] == '/notify')
+        else
         {
-            if (textInputField.value().split(' ').length == 2 && textInputField.value().split(' ')[1] == 'disable')
+            lastMessageMillis = millis();
+            if (textInputField.value() == '/help')
             {
-                everNotify = false;
-                chatBox.html('\nAwww. Sorry for annoying you, please leave a suggestion using <b>/propose</b> on how we could improve. :(\n ', true); 
+                addCommandLine();
+                resetFields = true;
             }
-            else if (textInputField.value().split(' ').length == 2 && textInputField.value().split(' ')[1] == 'enable')
+            else if (tempRank != 'guest' && textInputField.value().split(' ')[0] == '/notify')
             {
-                chatBox.html('\nThank you for enabling notifications. :)\n ', true); 
-                everNotify = true;
-                Notification.requestPermission();
+                if (textInputField.value().split(' ').length == 2 && textInputField.value().split(' ')[1] == 'disable')
+                {
+                    everNotify = false;
+                    chatBox.html('\nAwww. Sorry for annoying you, please leave a suggestion using <b>/propose</b> on how we could improve. :(\n ', true); 
+                }
+                else if (textInputField.value().split(' ').length == 2 && textInputField.value().split(' ')[1] == 'enable')
+                {
+                    chatBox.html('\nThank you for enabling notifications. :)\n ', true); 
+                    everNotify = true;
+                    Notification.requestPermission();
+                }
+                else
+                {
+                    chatBox.html('\nYour options for this command are: <b>enable</b> or <b>disable</b>.', true);
+                    chatBox.html('\n/notify [TYPE (enable, disable)].\n ', true);
+                }
+                resetFields = true;
             }
-            else
+            else if (tempRank != 'guest' && textInputField.value().split(' ')[0] == '/style')
             {
-                chatBox.html('\nYour options for this command are: <b>enable</b> or <b>disable</b>.', true);
-                chatBox.html('\n/notify [TYPE (enable, disable)].\n ', true);
+                if (textInputField.value().split(' ').length == 2 && textInputField.value().split(' ')[1] == 'light')
+                {
+                    document.getElementById('pagestyle').setAttribute('href', 'css/light.css');
+                    isDarkMode = false;
+                }
+                else if (textInputField.value().split(' ').length == 2 && textInputField.value().split(' ')[1] == 'dark')
+                {
+                    document.getElementById('pagestyle').setAttribute('href', 'css/dark.css');
+                    isDarkMode = true;
+                }
+                else
+                {
+                    chatBox.html('\nYour options for this command are: <b>light</b> or <b>dark</b>.', true);
+                    chatBox.html('\n/style [STYLE (light, dark)].\n ', true);
+                }
+                resetFields = true;
             }
-            resetFields = true;
-        }
-        else if (tempRank != 'guest' && textInputField.value().split(' ')[0] == '/style')
-        {
-            if (textInputField.value().split(' ').length == 2 && textInputField.value().split(' ')[1] == 'light')
+            else if (tempRank != 'guest' && textInputField.value().split(' ')[0] == '/propose')
             {
-                document.getElementById('pagestyle').setAttribute('href', 'css/light.css');
-                isDarkMode = false;
+                if (textInputField.value().split(' ').length > 2 && (textInputField.value().split(' ')[1] == 'bug' || textInputField.value().split(' ')[1] == 'suggestion'))
+                {
+                    socket.emit('chat', textInputField.value());
+                    resetFields = true;
+                }
+                else
+                {
+                    chatBox.html('\nYour options for this command are: <b>bug</b> or <b>suggestion</b>.', true);
+                    chatBox.html('\n/propose [TYPE (bug, suggestion)] [MESSAGE].\n ', true);
+                }
+                resetFields = true;
             }
-            else if (textInputField.value().split(' ').length == 2 && textInputField.value().split(' ')[1] == 'dark')
-            {
-                document.getElementById('pagestyle').setAttribute('href', 'css/dark.css');
-                isDarkMode = true;
-            }
-            else
-            {
-                chatBox.html('\nYour options for this command are: <b>light</b> or <b>dark</b>.', true);
-                chatBox.html('\n/style [STYLE (light, dark)].\n ', true);
-            }
-            resetFields = true;
-        }
-        else if (tempRank != 'guest' && textInputField.value().split(' ')[0] == '/propose')
-        {
-            if (textInputField.value().split(' ').length > 2 && (textInputField.value().split(' ')[1] == 'bug' || textInputField.value().split(' ')[1] == 'suggestion'))
+            else if (textInputField.value() != '')
             {
                 socket.emit('chat', textInputField.value());
                 resetFields = true;
             }
-            else
-            {
-                chatBox.html('\nYour options for this command are: <b>bug</b> or <b>suggestion</b>.', true);
-                chatBox.html('\n/propose [TYPE (bug, suggestion)] [MESSAGE].\n ', true);
-            }
-            resetFields = true;
-        }
-        else if (textInputField.value() != '')
-        {
-            socket.emit('chat', textInputField.value());
-            resetFields = true;
         }
         fullScroll();
     }

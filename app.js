@@ -318,28 +318,31 @@ function mainFunc(socket)
 				{
 					if (socket.id in chatterList)
 					{
-						console.log('Changed Room: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Username: " + chatterList[socket.id].name + " | Room: " + data + " | Rank: " + chatterList[socket.id].rank + " | Time: " + getSuperTime(new Date()));
-						chatterList[socket.id].room = data;
-						
-						let date = new Date();
-						let pack = {
-							spanner: '<span class="join">', //join
-							time: getTime(date),
-							timeStamp: date.getTime(),
-							username: chatterList[socket.id].name,
-							message: " has Connected!",
-						};
-					
-						for (let i in chatterList) 
+						if (isAllowedInRoom(data, chatterList[socket.id].rank))
 						{
-							let tempSocket = socketList[i];
-							if (chatterList[i].room == data)
+							console.log('Changed Room: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Username: " + chatterList[socket.id].name + " | Room: " + data + " | Rank: " + chatterList[socket.id].rank + " | Time: " + getSuperTime(new Date()));
+							chatterList[socket.id].room = data;
+							
+							let date = new Date();
+							let pack = {
+								spanner: '<span class="join">', //join
+								time: getTime(date),
+								timeStamp: date.getTime(),
+								username: chatterList[socket.id].name,
+								message: " has Connected!",
+							};
+						
+							for (let i in chatterList) 
 							{
-								tempSocket.emit('newChatAnnouncement', pack);
+								let tempSocket = socketList[i];
+								if (chatterList[i].room == data)
+								{
+									tempSocket.emit('newChatAnnouncement', pack);
+								}
 							}
-						}
 
-						updateUserList();
+							updateUserList();
+						}
 					}
 				}
 			}
@@ -434,7 +437,7 @@ function mainFunc(socket)
 			{
 				if (socket.id in chatterList && typeof(data) == 'string')
 				{
-					if (data[0] == '/')
+					if (data[0] == '/' && data.length < 1500)
 					{
 						if (chatterList[socket.id].rank == 'guest')
 						{
@@ -789,6 +792,19 @@ function isAllowedUsername(un)
 	return true;
 }
 
+function isAllowedInRoom(room, rank)
+{
+	if (room == 'd' && getRankValue(rank) < 2)
+	{
+		return false;
+	}
+	if (room == 'c' && getRankValue(rank) < 1)
+	{
+		return false;
+	}
+	return true;
+}
+
 function isUsernameFree(un)
 {
 	if (typeof(un) != 'string')
@@ -982,17 +998,17 @@ function getRankValue(rank)
 	}
 	if (rank == '++')
 	{
-		return 0;
+		return 2;
 	}
 	if (rank == '+')
 	{
-		return 0;
+		return 2;
 	}
 	if (rank == 'guest')
 	{
 		return 0;
 	}
-	return 0; // regular
+	return 1; // regular
 }
 
 function getMonth(date)
