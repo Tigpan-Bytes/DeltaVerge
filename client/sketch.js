@@ -203,6 +203,9 @@ function setup()
     socket.on('pwSuccess', function(){
         successText.html('Password change was successful.');
     });
+    socket.on('changeTempRank', function(data){
+        tempRank = data;
+    });
 }
 
 function notification(message)
@@ -220,29 +223,33 @@ function notification(message)
             silent: true
         }
 
-        if (!("Notification" in window)) {
-            alert("This browser does not support desktop notification");
-        }
-        else if (Notification.permission === "granted") 
+        ua = navigator.userAgent;
+        if (!(ua.indexOf("MSIE ") > -1 || ua.indexOf("Trident/") > -1))
         {
-            notify = new Notification(message, options);
+            if (!("Notification" in window)) {
+                alert("This browser does not support desktop notification");
+            }
+            else if (Notification.permission === "granted") 
+            {
+                notify = new Notification(message, options);
 
-            stillOpen = true;
-            notify.onclose = function(){ stillOpen = false; };
-            setTimeout(notify.close.bind(notify), 4000);
-        }
-        else if (Notification.permission !== "denied") 
-        {
-            Notification.requestPermission().then(function (permission) {
-                if (permission === "granted") 
-                {
-                    notify = new Notification(message, options);
+                stillOpen = true;
+                notify.onclose = function(){ stillOpen = false; };
+                setTimeout(notify.close.bind(notify), 4000);
+            }
+            else if (Notification.permission !== "denied") 
+            {
+                Notification.requestPermission().then(function (permission) {
+                    if (permission === "granted") 
+                    {
+                        notify = new Notification(message, options);
 
-                    stillOpen = true;
-                    notify.onclose = function(){ stillOpen = false; };
-                    setTimeout(notify.close.bind(notify), 4000);
-                }
-            });
+                        stillOpen = true;
+                        notify.onclose = function(){ stillOpen = false; };
+                        setTimeout(notify.close.bind(notify), 4000);
+                    }
+                });
+            }
         }
     }
 }
@@ -375,7 +382,7 @@ function createLobby()
         createChatRoom();
     });
     cButton.mouseClicked(function(){
-        if (tempRank != 'guest' && tempRank != 'reg')
+        if (tempRank != 'guest')
         {
             socket.emit('room', 'c');
             room = "C";
@@ -624,9 +631,9 @@ function createChatRoom()
 
     typingText = createElement('typing', 'Nobody is typing at the moment...');
 
-    chatBox = createElement('chatbox', '<i>&nbsp;&nbsp;&nbsp;&nbsp;Welcome to <b>Room ' + room + '</b>! Type, then press enter to chat. Alternatively, click in the bottom right to draw a picture.\n\nVersion - <b>0.1.2</b>:</i>', true); 
-    chatBox.html("\n<i>=> Notifications! Do <b>/notify</b> to enable/disable</i>.", true);
-    chatBox.html('\n<i>=> Bug Reports and Suggestions! Do <b>/propose</b>!\n\nType <b>/help</b> to view what commands you can use.</i>\n ', true);
+    chatBox = createElement('chatbox', '<i>&nbsp;&nbsp;&nbsp;&nbsp;Welcome to <b>Room ' + room + '</b>! Type, then press enter to chat. Alternatively, click in the bottom right to draw a picture.\n\nVersion - <b>0.1.3</b>:</i>', true); 
+    chatBox.html("\n<i>=> Spam protection!</i>.", true);
+    chatBox.html('\n<i>=> Generic bug fixes (internet explorer crashing), nothing special.</i>\n ', true);
 
     userList = createElement('listbox', '<i>User List:\n</i>');
 
@@ -1329,15 +1336,15 @@ function keyPressed()
 
         if (textInputField.value().length >= 1500)
         {
-            chatBox.html('<b>\nYour message is too long please keep it under 1500 characters.\n </b>', true);
+            chatBox.html('<b>\nYour message is too long please keep it under 1500 characters.</b>\n ', true);
         }
         else if (textInputField.value().split(/\r\n|\r|\n/).length >= 20)
         {
-            chatBox.html('<b>\nYour message is too long please keep it under 20 lines.\n </b>', true);
+            chatBox.html('<b>\nYour message is too long please keep it under 20 lines.</b>\n ', true);
         }
         else if (millis() - 1500 < lastMessageMillis)
         {
-            chatBox.html('<b>\nYou are sending messages too fast, please wait 1.5 seconds between messages.\n </b>', true);
+            chatBox.html('<b>\nYou are sending messages too fast, please wait 1.5 seconds between messages.</b>\n ', true);
         }
         else
         {
@@ -1358,7 +1365,10 @@ function keyPressed()
                 {
                     chatBox.html('\nThank you for enabling notifications. :)\n ', true); 
                     everNotify = true;
-                    Notification.requestPermission();
+                    if (!("Notification" in window)) 
+                    {
+                        Notification.requestPermission();
+                    }
                 }
                 else
                 {

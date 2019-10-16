@@ -652,6 +652,7 @@ function command(socket, message)
 					if (chatterList[i].name == words[1])
 					{
 						chatterList[i].rank = words[2];
+						socketList[i].emit('changeTempRank', words[2]);
 						room = chatterList[i].room;
 					}
 				}
