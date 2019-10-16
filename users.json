@@ -122,5 +122,9 @@
   "yes": {
     "hash": "$2b$12$BRU/0KWKzXsvax52Azi.IuvdBwbFDmdYofIkMBWE6j5HZRjK4r1/C",
     "rank": "reg"
+  },
+  "hAYDENshort3": {
+    "hash": "$2b$12$WpvZaFx4r.jTY2h8fhLoW.igwOCDk.zU.ZGUJLzUe0kPqtGVXsJuC",
+    "rank": "reg"
   }
 }
