@@ -146,5 +146,9 @@
   "Imaging": {
     "hash": "$2b$12$1QtQ9/XfqewWvL./Rbp6DOUACjp.TVVUHjBtHtQqjtR0z.NUtWbWC",
     "rank": "reg"
+  },
+  "Test": {
+    "hash": "$2b$12$kXQEWymVLXVsRO8BXZZaU.4UNbPEsBIJlRSZXU9hTcZQbEyAAaSL.",
+    "rank": "reg"
   }
 }
