@@ -207,6 +207,10 @@ function setup()
         tempRank = data;
     });
     socket.on('ipban', function(data){
+        if (data == -1)
+        {
+            errorText.html('Your ip-ban has been lifted. Say thank you!')
+        }
         setCookie('ban', new Date().getTime() + data * 60 * 1000, 1);
     });
 }
@@ -730,7 +734,9 @@ function addCommandLine()
             chatBox.html('<b>/delete [NAME]</b>\n', true);
             chatBox.html('&nbsp;&nbsp;=> PERMANENTLY deletes the account of the given user.\n\n', true);
             chatBox.html('<b>/ipban [NAME] [MINUTES (max 360)]</b>\n', true);
-            chatBox.html('&nbsp;&nbsp;=> Disables that computer from using pictochat for the specified minutes.\n', true);
+            chatBox.html('&nbsp;&nbsp;=> Disables that computer from using pictochat for the specified minutes. Also returns a code to use for /liftban.\n\n', true);
+            chatBox.html('<b>/liftban [CODE]</b>\n', true);
+            chatBox.html('&nbsp;&nbsp;=> Removes an ipban using the code returned in /ipban.\n', true);
             chatBox.html('\nList of valid ranks: reg, +, ++, mod, admin, guest (guest cannot be changed or set)\n\n ', true);
         }
     }

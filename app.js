@@ -827,12 +827,77 @@ function command(socket, message)
 				}
 				socketList[banned.id].emit('kill', 'Your ip was banned by user ' + chatter.name + ' with the rank ' + chatter.rank + ' for ' + mins + ' minutes.');
 				socketList[banned.id].emit('ipban', mins);
+
+				let code = banned.id;
+				let date = new Date();
+		
 				announceDisconnect(banned, "ipban");
+
+				let pack = {
+					spanner: '<span class="check">',
+					time: getTime(date),
+					timeStamp: date.getTime(),
+					username: '',
+					message: 'If you ever want to unban this user, use the code: ' + code + '. Do <b>/liftban ' + code + '</b> to unban the user, this will not work if they refresh the page after being banned.',
+				};
+				socket.emit('newChatAnnouncement', pack);
 
 				delete chatterList[banned.id];
 
 				updateRoomList(chatter.room);
-				console.log('COMMAND: ' + chatter.name + ' - [' + chatter.rank +'] IP-BANNED user account ' + words[1] + " for " + mins + " minutes | Time: " + getSuperTime(new Date()));
+				console.log('COMMAND: ' + chatter.name + ' - [' + chatter.rank +'] IP-BANNED user account ' + words[1] + " for " + mins + " minutes | Time: " + getSuperTime(date));
+				return true;
+			}
+		}
+		else if (words.length == 2 && words[0] == 'liftban')
+		{
+			let id = parseInt(words[1]);
+			if (id in socketList)
+			{	
+				if (!(id in chatterList))
+				{
+					socketList[id].emit('ipban', -1);
+					let date = new Date();
+
+					let pack = {
+						spanner: '<span class="check">',
+						time: getTime(date),
+						timeStamp: date.getTime(),
+						username: '',
+						message: 'You have lifted the ip-ban.',
+					};
+					socket.emit('newChatAnnouncement', pack);
+
+					console.log('COMMAND: ' + chatter.name + ' - [' + chatter.rank +'] Ban lifted with code ' + id + " | Time: " + getSuperTime(date));
+					return true;
+				}
+				else
+				{
+					let date = new Date();
+
+					let pack = {
+						spanner: '<span class="check">',
+						time: getTime(date),
+						timeStamp: date.getTime(),
+						username: '',
+						message: 'That ip-ban has already expired.',
+					};
+					socket.emit('newChatAnnouncement', pack);
+					return true;
+				}
+			}
+			else
+			{
+				let date = new Date();
+
+				let pack = {
+					spanner: '<span class="check">',
+					time: getTime(date),
+					timeStamp: date.getTime(),
+					username: '',
+					message: 'Code ' + words[1] + ' is invalid, they may have refreshed the page.',
+				};
+				socket.emit('newChatAnnouncement', pack);
 				return true;
 			}
 		}
@@ -840,6 +905,7 @@ function command(socket, message)
 	catch (err)
 	{
 		console.log("Command failed unexpectedly.");
+		console.log(err);
 	}
 	return false;
 }
@@ -1130,6 +1196,10 @@ function commandRank(command, rank)
 		cVal = 3;
 	}
 	if (command == 'ipban')
+	{
+		cVal = 3;
+	}
+	if (command == 'liftban')
 	{
 		cVal = 3;
 	}
