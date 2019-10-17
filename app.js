@@ -548,6 +548,11 @@ function command(socket, message)
 		let chatter = chatterList[socket.id];
 		message = message.substr(1);
 		let words = message.split(' ');
+		if (!commandRank(words[0], chatter.rank)) //if that rank can access that command
+		{
+			return false;
+		}
+
 		if (words.length >= 3 && words[0] == 'propose')
 		{
 			if (words[1] == 'bug' || words[1] == 'suggestion')
@@ -627,6 +632,60 @@ function command(socket, message)
 
 				return true;
 			}
+		}
+		if (words.length == 2 && words[0] == 'check')
+		{
+			let targetUser = null;
+			for (let i in users) 
+			{
+				if (i == words[1])
+				{
+					targetUser = users[i];
+				}
+			}
+
+			let targetChatter = null;
+			for (let i in chatterList) 
+			{
+				if (chatterList[i].name == words[1])
+				{
+					targetChatter = chatterList[i];
+				}
+			}
+
+			let message = '';
+
+			if (targetUser != null && targetChatter != null)
+			{
+				message = words[1] + ' is a registered account with the rank ' + targetUser['rank'] + ', and is online in room ' + targetChatter.room + '.';
+			}
+			else if (targetUser == null && targetChatter != null)
+			{
+				message = words[1] + ' is online as a guest in room ' + targetChatter.room + '.';
+			}
+			else if (targetUser != null && targetChatter == null)
+			{
+				message = words[1] + ' is a registered account with the rank ' + targetUser['rank'] + ', but is not online.';
+			}
+			else
+			{
+				message = words[1] + ' does not exist.';
+			}
+
+			let date = new Date();
+			console.log('COMMAND: ' + chatter.name + ' - [' + chatter.rank +'] Checked user ' + words[1] + " | Time: " + getSuperTime(date));
+
+			let pack = {
+				spanner: '<span class="check">',
+				time: getTime(date),
+				timeStamp: date.getTime(),
+				username: 'Check: ',
+				message: message,
+			};
+	
+			socket.emit('newChatAnnouncement', pack);
+
+			return true;
 		}
 		if (words.length == 3 && words[0] == 'rank')
 		{
@@ -738,6 +797,43 @@ function command(socket, message)
 						console.error(err);
 					}
 				});
+			}
+		}
+		else if (words.length == 3 && words[0] == 'ipban')
+		{
+			let banned = null;
+			for (let i in chatterList) 
+			{
+				if (chatterList[i].name == words[1])
+				{
+					banned = chatterList[i];
+				}
+			}
+			let mins = parseInt(words[2]);
+			if (mins > 360)
+			{
+				mins = 360;
+			}
+			if (mins < 1)
+			{
+				mins = 1;
+			}
+
+			if (banned != null)
+			{	
+				if (!isCommandAllowed(chatter.rank, banned.rank, -1)) // they need to be one step lower
+				{
+					return false;
+				}
+				socketList[banned.id].emit('kill', 'Your ip was banned by user ' + chatter.name + ' with the rank ' + chatter.rank + ' for ' + mins + ' minutes.');
+				socketList[banned.id].emit('ipban', mins);
+				announceDisconnect(banned, "ipban");
+
+				delete chatterList[banned.id];
+
+				updateRoomList(chatter.room);
+				console.log('COMMAND: ' + chatter.name + ' - [' + chatter.rank +'] IP-BANNED user account ' + words[1] + " for " + mins + " minutes | Time: " + getSuperTime(new Date()));
+				return true;
 			}
 		}
 	}
@@ -863,6 +959,16 @@ function announceDisconnect(chatter, special)
 			timeStamp: date.getTime(),
 			username: chatter.name,
 			message: " was struck with the Almighty Banhammer!",
+		};
+	}
+	else if (special == 'ipban')
+	{
+		pack = {
+			spanner: '<span class="ban">', //ban
+			time: getTime(date),
+			timeStamp: date.getTime(),
+			username: chatter.name,
+			message: " was struck with the Almighty IP-Banhammer!",
 		};
 	}
 	else
@@ -1010,6 +1116,24 @@ function getRankValue(rank)
 		return 0;
 	}
 	return 1; // regular
+}
+
+function commandRank(command, rank)
+{
+	let cVal = 1;
+	if (command == 'rank')
+	{
+		cVal = 3;
+	}
+	if (command == 'delete')
+	{
+		cVal = 3;
+	}
+	if (command == 'ipban')
+	{
+		cVal = 3;
+	}
+	return getRankValue(rank) > cVal; 
 }
 
 function getMonth(date)

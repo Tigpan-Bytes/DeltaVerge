@@ -196,7 +196,7 @@ function setup()
             }
             else
             {
-                typingText.html('<span class="baseText">Several</span> people are typing.');
+                typingText.html('<span class="baseText">Several people are typing</span>.');
             }
         }
     });
@@ -206,7 +206,34 @@ function setup()
     socket.on('changeTempRank', function(data){
         tempRank = data;
     });
+    socket.on('ipban', function(data){
+        setCookie('ban', new Date().getTime() + data * 60 * 1000, 1);
+    });
 }
+
+function setCookie(cname, cvalue, exdays) 
+{
+    let d = new Date();
+    d.setTime(d.getTime() + (exdays*24*60*60*1000));
+    let expires = "expires="+ d.toUTCString();
+    document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+}
+
+function getCookie(cname) {
+    let name = cname + "=";
+    let decodedCookie = decodeURIComponent(document.cookie);
+    let ca = decodedCookie.split(';');
+    for(var i = 0; i <ca.length; i++) {
+      let c = ca[i];
+      while (c.charAt(0) == ' ') {
+        c = c.substring(1);
+      }
+      if (c.indexOf(name) == 0) {
+        return c.substring(name.length, c.length);
+      }
+    }
+    return "";
+  }
 
 function notification(message)
 {
@@ -632,8 +659,9 @@ function createChatRoom()
     typingText = createElement('typing', 'Nobody is typing at the moment...');
 
     chatBox = createElement('chatbox', '<i>&nbsp;&nbsp;&nbsp;&nbsp;Welcome to <b>Room ' + room + '</b>! Type, then press enter to chat. Alternatively, click in the bottom right to draw a picture.\n\nVersion - <b>0.1.3</b>:</i>', true); 
-    chatBox.html("\n<i>=> Spam protection!</i>.", true);
-    chatBox.html('\n<i>=> Generic bug fixes (internet explorer crashing), nothing special.</i>\n ', true);
+    chatBox.html("\n<i>=> Spam protection, and more admin/mod tools.</i>", true);
+    chatBox.html("\n<i>=> <b>/check [USERNAME]</b> to see if someone is online.</i>", true);
+    chatBox.html('\n<i>=> Generic bug fixes (internet explorer crashing, thank you Gamer for the report).</i>\n ', true);
 
     userList = createElement('listbox', '<i>User List:\n</i>');
 
@@ -689,16 +717,20 @@ function addCommandLine()
         chatBox.html('<b>/whisper [NAME] [MESSAGE]</b>\n', true);
         chatBox.html('&nbsp;&nbsp;=> Silently messages the user so nobody else can see, works across different and same rooms.\n\n', true);
         chatBox.html('<b>/propose [TYPE (bug, suggestion)] [MESSAGE]</b>\n', true);
-        chatBox.html('&nbsp;&nbsp;=> Logs your suggestion so that Tim (Tigpan/pictochat owner) can read and act on your proposals after school.\n\n', true);
+        chatBox.html('&nbsp;&nbsp;=> Logs your suggestion or bug report so that Tim (Tigpan/pictochat owner) can read and act on your proposals after school.\n\n', true);
         chatBox.html('<b>/notify [TYPE (enable, disable)]\n', true);
-        chatBox.html('&nbsp;&nbsp;=> Requests permission to display notifications or turns them off.\n\n ', true);
+        chatBox.html('&nbsp;&nbsp;=> Enables or disables notifications.\n\n', true);
+        chatBox.html('<b>/check [USERNAME]\n', true);
+        chatBox.html('&nbsp;&nbsp;=> Tells you if that account exists, if it exists what its ranks is, if it is online and what room it is.\n\n ', true);
         if (tempRank == 'admin' || tempRank == 'mod')
         {
             chatBox.html('\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>=== Admin/Mod Commands ===</b>\n', true);
             chatBox.html('<b>/rank [NAME] [RANK]</b>\n', true);
             chatBox.html('&nbsp;&nbsp;=> Changes the rank for the given user to the one specified.\n\n', true);
             chatBox.html('<b>/delete [NAME]</b>\n', true);
-            chatBox.html('&nbsp;&nbsp;=> PERMANENTLY deletes the account of the given user.\n', true);
+            chatBox.html('&nbsp;&nbsp;=> PERMANENTLY deletes the account of the given user.\n\n', true);
+            chatBox.html('<b>/ipban [NAME] [MINUTES (max 360)]</b>\n', true);
+            chatBox.html('&nbsp;&nbsp;=> Disables that computer from using pictochat for the specified minutes.\n', true);
             chatBox.html('\nList of valid ranks: reg, +, ++, mod, admin, guest (guest cannot be changed or set)\n\n ', true);
         }
     }
@@ -710,43 +742,67 @@ function addCommandLine()
 
 function attemptGuest()
 {
-    tempUsername = guestUsernameField.value();
-    socket.emit('init', tempUsername);
-    guestUsernameField.value('');
+    let ban = getCookie('ban');
+    if (ban == '' || parseInt(ban) < new Date().getTime())
+    {
+        tempUsername = guestUsernameField.value();
+        socket.emit('init', tempUsername);
+        guestUsernameField.value('');
+    }
+    else
+    {
+        errorText.html('Looks like you have been ip-banned. Your ban has ' + (ceil((parseInt(ban) - new Date().getTime()) / 1000 / 60 * 10) / 10) + ' minutes remaining...');
+    }
 }
 
 function attemptLogin() 
 {
-    errorText.html('');
-    tempUsername = loginUsernameField.value();
-    socket.emit('login', {
-        un: tempUsername,
-        pw: loginPasswordField.value()
-    });
-    loginUsernameField.value('');
-    loginPasswordField.value('');
+    let ban = getCookie('ban');
+    if (ban == '' || parseInt(ban) < new Date().getTime())
+    {
+        errorText.html('');
+        tempUsername = loginUsernameField.value();
+        socket.emit('login', {
+            un: tempUsername,
+            pw: loginPasswordField.value()
+        });
+        loginUsernameField.value('');
+        loginPasswordField.value('');
+    }
+    else
+    {
+        errorText.html('Looks like you have been ip-banned. Your ban has ' + (ceil((parseInt(ban) - new Date().getTime()) / 1000 / 60 * 10) / 10) + ' minutes remaining...');
+    }
 }
 
 function attemptRegister() 
 {
-    errorText.html('');
-    if (registerPasswordField.value() == registerConfirmPasswordField.value())
+    let ban = getCookie('ban');
+    if (ban == '' || parseInt(ban) < new Date().getTime())
     {
-        tempUsername = registerUsernameField.value();
-        socket.emit('register', {
-            un: tempUsername,
-            pw: registerPasswordField.value()
-        });
-        registerUsernameField.value('');
-        registerPasswordField.value('');
-        registerConfirmPasswordField.value('');
+        errorText.html('');
+        if (registerPasswordField.value() == registerConfirmPasswordField.value())
+        {
+            tempUsername = registerUsernameField.value();
+            socket.emit('register', {
+                un: tempUsername,
+                pw: registerPasswordField.value()
+            });
+            registerUsernameField.value('');
+            registerPasswordField.value('');
+            registerConfirmPasswordField.value('');
+        }
+        else
+        {
+            registerPasswordField.value('');
+            registerConfirmPasswordField.value('');
+            
+            failedLogin(2);
+        }
     }
     else
     {
-        registerPasswordField.value('');
-        registerConfirmPasswordField.value('');
-        
-        failedLogin(2);
+        errorText.html('Looks like you have been ip-banned. Your ban has ' + (ceil((parseInt(ban) - new Date().getTime()) / 1000 / 60 * 10) / 10) + ' minutes remaining...');
     }
 }
 
