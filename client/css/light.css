@@ -265,7 +265,35 @@ loginBox {
 }
  
 select {
+    color: black;
+    margin:8px 8px;
+    padding:4px 4px;
+    width: calc(100% - 16px - 240px);
+    height: 38px;
     border: 4px solid #999;
     border-radius: 4px;
     background-color: #e4e4e4;
+}
+
+option {
+    color: black;
+    text-align:left;
+    width: calc(100% - 16px - 240px);
+    height: 38px;
+}
+
+friendBox {
+    font-size: 18px;
+    width: calc(100% - 16px - 240px);
+    height: calc(100% - 80px - 32px - 48px - 24px - 52px);
+    text-align:left;
+    margin:8px 8px;
+    padding:12px 12px;
+    box-sizing: border-box;
+    border: 4px solid #999;
+    border-radius: 4px;
+    background-color: #f0f0f0;
+    overflow-y: scroll !important; 
+    white-space: pre-wrap;
+    word-wrap: break-word;
 }

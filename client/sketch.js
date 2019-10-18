@@ -95,6 +95,7 @@ let blackColorButton;
 //friends
 let leaveFriendsButton;
 let welcomeFriend;
+let friendSelection;
 let friendsList;
 let friendChatBox;
 
@@ -642,7 +643,7 @@ function createFriends() //pls teach me now
     welcomeFriend.style('color', '#ddd');
     welcomeFriend.parent(background);
 
-    friendChatBox = createElement('chatbox', '<i>&nbsp;&nbsp;&nbsp;&nbsp;Sorry buds, this is still not available, but it is being worked on!</b></i>', true); 
+    friendChatBox = createElement('friendBox', '<i>&nbsp;&nbsp;&nbsp;&nbsp;Sorry buds, this is still not available, but it is being worked on!</b></i>', true); 
     friendChatBox.parent(background);
 
     friendsList = createElement('listbox', '<i>Friends List:\n</i>');
@@ -651,6 +652,10 @@ function createFriends() //pls teach me now
     friendsListButton = createButton('Friends List');
     friendsListButton.size(240 - 16, 40);
     friendsListButton.parent(background);
+
+    friendSelection = createElement('select', '');
+    friendSelection.parent(background);
+    updateFriendSelection([]);
 
     friendRequestsButton = createButton('Friend Requests');
     friendRequestsButton.size(240 - 16, 40);
@@ -1189,7 +1194,8 @@ function windowResized()
         leaveFriendsButton.position(windowWidth - 178, 8);
 
         welcomeFriend.position(0,0);
-        friendChatBox.position(0, 48);
+        friendSelection.position(0, 48);
+        friendChatBox.position(0, 48 + 52);
         friendsList.position(windowWidth - 240, 48);
 
         friendsListButton.position(windowWidth - 232, windowHeight - 112);
@@ -1219,8 +1225,19 @@ function updateUserList(data)
     userList.html("\n ", true);
 }
 
+function updateFriendSelection(data)
+{
+    friendSelection.html('<option value="main">Friend Manager</option>');
+
+    for (let i = 0; i < data.length; i++)
+    {
+        friendSelection.html('<option value="' + data[i].un + '">Direct Message: ' + getNameSpanner(data[i].rank) + data[i].un + '</span></option>', true);
+    }
+}
+
 function updateFriendList(data)
 {
+    updateFriendSelection(data);
     friendsList.html("<i>Friends List:</i>");
 
     for (let i = 0; i < data.length; i++)
