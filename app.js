@@ -543,6 +543,8 @@ function mainFunc(socket)
 					let pack = [];
 					let changed = false;
 					let user = users[chatterList[socket.id].name];
+					let userName = chatterList[socket.id].name;
+
 					for (let i = 0; i < user['friends'].length; i++)
 					{
 						let friend = user['friends'][i];
@@ -551,6 +553,25 @@ function mainFunc(socket)
 							user.friends.splice(i, 1);
 							changed = true;
 							i--;
+							continue;
+						}
+
+						let found = false;
+						for(let j = 0; j < users[friend]['friends'].length; j++) 
+						{
+							if (users[friend]['friends'][j] == userName) 
+							{
+								found = true;
+								break;
+							}
+						}
+
+						if (!found)
+						{
+							user.friends.splice(i, 1);
+							changed = true;
+							i--;
+							continue;
 						}
 						else
 						{
@@ -587,7 +608,7 @@ function mainFunc(socket)
 			}
 			catch (err)
 			{
-				console.log("Drawing failed unexpectedly.");
+				console.log("Request Friends failed unexpectedly.");
 			}
 		});
 	}

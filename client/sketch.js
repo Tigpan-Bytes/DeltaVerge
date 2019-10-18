@@ -98,6 +98,9 @@ let welcomeFriend;
 let friendsList;
 let friendChatBox;
 
+let friendsListButton;
+let friendRequestsButton;
+
 //end
 
 let pen = 2;
@@ -635,7 +638,7 @@ function createFriends() //pls teach me now
     leaveFriendsButton.size(170, 40);
     leaveFriendsButton.parent(background);
 
-    welcomeFriend = createElement('welcome', 'Welcome, <b>' + username + '</b>, to <b>Friends</b>.');
+    welcomeFriend = createElement('welcome', 'Welcome, <b>' + username + '</b>, to <b>Friends and DMs</b>.');
     welcomeFriend.style('color', '#ddd');
     welcomeFriend.parent(background);
 
@@ -644,6 +647,14 @@ function createFriends() //pls teach me now
 
     friendsList = createElement('listbox', '<i>Friends List:\n</i>');
     friendsList.parent(background);
+
+    friendsListButton = createButton('Friends List');
+    friendsListButton.size(240 - 16, 40);
+    friendsListButton.parent(background);
+
+    friendRequestsButton = createButton('Friend Requests');
+    friendRequestsButton.size(240 - 16, 40);
+    friendRequestsButton.parent(background);
 
     socket.emit('requestFriends');
 
@@ -660,6 +671,9 @@ function leaveFriends()
     friendChatBox.remove();
     friendsList.remove();
 
+    friendsListButton.remove();
+    friendRequestsButton.remove();
+    
     windowResized();
 }
 
@@ -828,9 +842,9 @@ function addCommandLine()
             if (tempRank != '+')
             {
                 chatBox.html('\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>=== + + Commands ===</b>\n', true);
-                chatBox.html('<b>/slow [USERNAME] [MINUTES (max 30)]\n', true);
+                chatBox.html('<b>/slow [NAME] [MINUTES (max 30)]\n', true);
                 chatBox.html('&nbsp;&nbsp;=> Slows down how fast a user can chat by a third, for the time specified.\n', true);
-                chatBox.html('<b>/unslow [USERNAME]\n', true);
+                chatBox.html('<b>/unslow [NAME]\n', true);
                 chatBox.html('&nbsp;&nbsp;=> Removes slowness that is applied to a user.\n ', true);
 
                 if (tempRank == 'admin' || tempRank == 'mod')
@@ -853,7 +867,7 @@ function addCommandLine()
     }
     else
     {
-        chatBox.html("\nAs a guest you don't have access to any commands or extras, create an account to gain access to these.\n  ", true);
+        chatBox.html("\nAs a guest you don't have access to any commands, friends, or extras, create an account to gain access to these.\n  ", true);
     }
 }
 
@@ -1177,6 +1191,10 @@ function windowResized()
         welcomeFriend.position(0,0);
         friendChatBox.position(0, 48);
         friendsList.position(windowWidth - 240, 48);
+
+        friendsListButton.position(windowWidth - 232, windowHeight - 112);
+
+        friendRequestsButton.position(windowWidth - 232, windowHeight - 52);
     }
 }
 
