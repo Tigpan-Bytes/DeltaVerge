@@ -201,7 +201,8 @@ function mainFunc(socket)
 								{
 									users[data.un] = {
 										hash: hash, 
-										rank: 'reg'
+										rank: 'reg',
+										friends: []
 									};
 									fs.writeFile('users.json', JSON.stringify(users, null, 2), function(err){
 										if (err)
@@ -359,7 +360,7 @@ function mainFunc(socket)
 				{
 					console.log('Deinitilized: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Time: " + getSuperTime(new Date()));
 
-					announceDisconnect(chatterList[socket.id], "null");
+					announceDisconnect(chatterList[socket.id], "null", '');
 
 					delete chatterList[socket.id];
 				}
@@ -377,7 +378,7 @@ function mainFunc(socket)
 
 				if (socket.id in chatterList)
 				{
-					announceDisconnect(chatterList[socket.id], "null");
+					announceDisconnect(chatterList[socket.id], "null", '');
 
 					chatterList[socket.id].room = "null";
 
@@ -399,7 +400,7 @@ function mainFunc(socket)
 
 					if (socket.id in chatterList)
 					{
-						announceDisconnect(chatterList[socket.id], "null");
+						announceDisconnect(chatterList[socket.id], "null", '');
 					
 						delete chatterList[socket.id];
 
@@ -533,6 +534,62 @@ function mainFunc(socket)
 				console.log("Drawing failed unexpectedly.");
 			}
 		});
+
+		socket.on('requestFriends', function(){
+			try
+			{
+				if (socket.id in chatterList)
+				{
+					let pack = [];
+					let changed = false;
+					let user = users[chatterList[socket.id].name];
+					for (let i = 0; i < user['friends'].length; i++)
+					{
+						let friend = user['friends'][i];
+						if (!(friend in users))
+						{
+							user.friends.splice(i, 1);
+							changed = true;
+							i--;
+						}
+						else
+						{
+							let online = false;
+							for (let j in chatterList) 
+							{
+								if (chatterList[j].name == friend)
+								{
+									online = true;
+									break;
+								}
+							}
+
+							pack.push({
+								active: online,
+								un: friend,
+								rank: users[friend]['rank'],
+							});
+						}
+					}
+
+					if (changed)
+					{
+						fs.writeFile('users.json', JSON.stringify(users, null, 2), function(err){
+							if (err)
+							{
+								console.error(err);
+							}
+						});
+					}
+
+					socket.emit('friendList', pack);
+				}
+			}
+			catch (err)
+			{
+				console.log("Drawing failed unexpectedly.");
+			}
+		});
 	}
 	catch (err)
 	{
@@ -555,7 +612,7 @@ function command(socket, message)
 
 		if (words.length >= 3 && words[0] == 'propose')
 		{
-			if (words[1] == 'bug' || words[1] == 'suggestion')
+			if (words[1] == 'bug' || words[1] == 'suggestion' || words[1] == 'request')
 			{
 				let wMessage = '';
 				for (let i = 2; i < words.length - 1; i++)
@@ -764,7 +821,7 @@ function command(socket, message)
 					return false;
 				}
 				socketList[deleted.id].emit('kill', 'Your account was forcefully deleted by user ' + chatter.name + ' with the rank ' + chatter.rank + '.');
-				announceDisconnect(deleted, "delete");
+				announceDisconnect(deleted, "delete", '');
 
 				delete chatterList[deleted.id];
 				if (words[1] in users)
@@ -831,7 +888,7 @@ function command(socket, message)
 				let code = banned.id;
 				let date = new Date();
 		
-				announceDisconnect(banned, "ipban");
+				announceDisconnect(banned, "ipban", ' for ' + mins + ' minutes!');
 
 				let pack = {
 					spanner: '<span class="check">',
@@ -898,6 +955,120 @@ function command(socket, message)
 					message: 'Code ' + words[1] + ' is invalid, they may have refreshed the page.',
 				};
 				socket.emit('newChatAnnouncement', pack);
+				return true;
+			}
+		}
+		else if (words.length == 1 && words[0] == 'liftallbans')
+		{
+			let id = parseInt(words[1]);
+			for (id in socketList)
+			{	
+				socketList[id].emit('ipban', -1);
+			}
+
+			let date = new Date();
+			let pack = {
+				spanner: '<span class="check">',
+				time: getTime(date),
+				timeStamp: date.getTime(),
+				username: '',
+				message: 'You have lifted ALL ip-bans currently active.',
+			};
+			socket.emit('newChatAnnouncement', pack);
+
+			console.log('COMMAND: ' + chatter.name + ' - [' + chatter.rank +'] Lifted ALL bans | Time: ' + getSuperTime(date));
+			return true;
+		}
+		else if (words.length == 3 && words[0] == 'slow')
+		{
+			let slowed = null;
+			for (let i in chatterList) 
+			{
+				if (chatterList[i].name == words[1])
+				{
+					slowed = chatterList[i];
+				}
+			}
+			let mins = parseInt(words[2]);
+			if (mins > 30)
+			{
+				mins = 30;
+			}
+			if (mins < 1)
+			{
+				mins = 1;
+			}
+
+			if (slowed != null)
+			{	
+				if (!isCommandAllowed(chatter.rank, slowed.rank, -1)) // they need to be one step lower
+				{
+					return false;
+				}
+				socketList[slowed.id].emit('slow', mins);
+
+				let date = new Date();
+		
+				let pack = {
+					spanner: '<span class="slow">', 
+					time: getTime(date),
+					timeStamp: date.getTime(),
+					username: words[1],
+					message: " was slowed by " + chatter.name + " for " + mins + " minutes!",
+				};
+		
+				for (let i in chatterList) 
+				{
+					let tempSocket = socketList[i];
+					if (chatter.room == chatterList[i].room)
+					{
+						tempSocket.emit('newChatAnnouncement', pack);
+					}
+				}
+
+				console.log('COMMAND: ' + chatter.name + ' - [' + chatter.rank +'] Slowed user account ' + words[1] + " for " + mins + " minutes | Time: " + getSuperTime(date));
+				return true;
+			}
+		}
+		else if (words.length == 2 && words[0] == 'unslow')
+		{
+			let slowed = null;
+			for (let i in chatterList) 
+			{
+				if (chatterList[i].name == words[1])
+				{
+					slowed = chatterList[i];
+				}
+			}
+
+			if (slowed != null)
+			{	
+				if (!isCommandAllowed(chatter.rank, slowed.rank, -1)) // they need to be one step lower
+				{
+					return false;
+				}
+				socketList[slowed.id].emit('slow', -1);
+
+				let date = new Date();
+		
+				let pack = {
+					spanner: '<span class="slow">', 
+					time: getTime(date),
+					timeStamp: date.getTime(),
+					username: words[1],
+					message: " was unslowed by " + chatter.name + "!",
+				};
+		
+				for (let i in chatterList) 
+				{
+					let tempSocket = socketList[i];
+					if (chatter.room == chatterList[i].room)
+					{
+						tempSocket.emit('newChatAnnouncement', pack);
+					}
+				}
+
+				console.log('COMMAND: ' + chatter.name + ' - [' + chatter.rank +'] Unslowed user account ' + words[1] + " | Time: " + getSuperTime(date));
 				return true;
 			}
 		}
@@ -1013,7 +1184,7 @@ function isAllowedPassword(pw)
 	return true;
 }
 
-function announceDisconnect(chatter, special)
+function announceDisconnect(chatter, special, extra)
 {
 	let date = new Date();
 	let pack;
@@ -1034,7 +1205,7 @@ function announceDisconnect(chatter, special)
 			time: getTime(date),
 			timeStamp: date.getTime(),
 			username: chatter.name,
-			message: " was struck with the Almighty IP-Banhammer!",
+			message: " was struck with the Almighty IP-Banhammer" + extra,
 		};
 	}
 	else
@@ -1163,15 +1334,15 @@ function getRankValue(rank)
 {
 	if (rank == 'admin')
 	{
-		return 4;
+		return 5;
 	}
 	if (rank == 'mod')
 	{
-		return 3;
+		return 4;
 	}
 	if (rank == '++')
 	{
-		return 2;
+		return 3;
 	}
 	if (rank == '+')
 	{
@@ -1189,17 +1360,33 @@ function commandRank(command, rank)
 	let cVal = 1;
 	if (command == 'rank')
 	{
-		cVal = 3;
+		cVal = 4;
 	}
 	if (command == 'delete')
 	{
-		cVal = 3;
+		cVal = 4;
 	}
 	if (command == 'ipban')
 	{
-		cVal = 3;
+		cVal = 4;
 	}
 	if (command == 'liftban')
+	{
+		cVal = 4;
+	}
+	if (command == 'liftallbans')
+	{
+		cVal = 4;
+	}
+	if (command == 'check')
+	{
+		cVal = 2;
+	}
+	if (command == 'slow')
+	{
+		cVal = 3;
+	}
+	if (command == 'unslow')
 	{
 		cVal = 3;
 	}

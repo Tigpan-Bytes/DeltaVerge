@@ -73,8 +73,10 @@ let typingText;
 let lobbyButton;
 let friendsButton;
 
-//drawing
+//drawing and friends
 let background;
+
+//drawing
 let cancelPictureButton;
 let sendPictureButton;
 let resetPictureButton;
@@ -90,6 +92,14 @@ let paintBucketButton;
 let whiteColorButton;
 let blackColorButton;
 
+//friends
+let leaveFriendsButton;
+let welcomeFriend;
+let friendsList;
+let friendChatBox;
+
+//end
+
 let pen = 2;
 let penColor = [0, 0, 0, 255];
 
@@ -97,6 +107,7 @@ let resetFields = false;
 let lastMessageTimeStamp = null;
 let lastPrintedMessageTimeStamp = null;
 let lastMessageMillis;
+let lastLength = 0;
 let noChatDisplayTime = 120000;
 let forceDisplayTime = 240000;
 
@@ -108,6 +119,7 @@ let States = {
 };
 
 let state = States.main;
+
 let lastMillis = 0;
 let typingMillis = 0;
 let isDarkMode = false;
@@ -118,11 +130,16 @@ const pictureHeight = 170;
 let isDrawingOpen = false;
 let forceFullScroll = -1;
 
+let isFriendsOpen = false;
+
 let notify;
 let stillOpen = false;
 let everNotify = true;
 let hasFocus = true;
 let notifyMessage = 'Pictochat';
+
+let slowMillis = 0;
+let isSlowed = false;
 
 function checkPageFocus() 
 {
@@ -162,6 +179,7 @@ function setup()
     socket.on('newDrawing', addDrawing);
     socket.on('newChatAnnouncement', addChatAnnouncement);
     socket.on('newUserList', updateUserList);
+    socket.on('friendList', updateFriendList);
     socket.on('acceptedUN', acceptedLogin);
     socket.on('failedUN', failedLogin);
     socket.on('roomCounts', function(data){
@@ -209,9 +227,27 @@ function setup()
     socket.on('ipban', function(data){
         if (data == -1)
         {
-            errorText.html('Your ip-ban has been lifted. Say thank you!')
+            let ban = getCookie('ban');
+            if (ban != '' && parseInt(ban) >= new Date().getTime())
+            {
+                errorText.html('Your ip-ban has been lifted. Say thank you!');
+                notification('You have been unbanned!', true);
+            }
         }
         setCookie('ban', new Date().getTime() + data * 60 * 1000, 1);
+    });
+    socket.on('slow', function(data) {
+        if (data == -1)
+        {
+            slowMillis = 0;
+            isSlowed = false;
+            addChatAnnouncement()
+        }
+        else
+        {
+            slowMillis = millis() + data * 1000 * 60;
+            isSlowed = true;
+        }
     });
 }
 
@@ -239,9 +275,9 @@ function getCookie(cname) {
     return "";
   }
 
-function notification(message)
+function notification(message, force)
 {
-    if (!hasFocus && !stillOpen && everNotify)
+    if ((!hasFocus && !stillOpen && everNotify) || force)
     {
         notifyMessage = message;
         document.title = message;
@@ -291,6 +327,8 @@ function kill(message)
     if (state == States.lobby) { leaveLobby(); }
     if (state == States.changePw) { leavePasswordChange(); }
     if (state != States.main) { createMain(); }
+    if (isFriendsOpen) { leaveFriends(); }
+    if (isDrawingOpen) { leaveDrawing(); }
     state = States.main;
     if (message != undefined)
     {
@@ -362,13 +400,19 @@ function createMain()
     errorText = createElement('errorText', '');
     errorText.size(windowWidth / 2, 100);
 
+    if (friendsButton != undefined)
+    {
+        friendsButton.remove();
+        friendsButton = undefined;
+    }
+
     windowResized();
 }
 
 function createLobby()
 {
     logout = createButton('Logout');
-    logout.size(90, 30);
+    logout.size(170, 40);
     if (tempRank != 'guest')
     {
         changePassword = createButton('Change Password');
@@ -456,13 +500,21 @@ function createLobby()
     cButton.style('font-size', '26px');
     dButton.style('font-size', '26px');
 
+    if (friendsButton == undefined && tempRank != 'guest')
+    {  
+        friendsButton = createImg('friends.png');
+        friendsButton.size(40, 40);
+        friendsButton.mouseClicked(createFriends);
+        friendsButton.attribute('class', 'interact');
+    }
+
     windowResized();
 }
 
 function createPasswordChange()
 {
     backToLobby = createButton('Lobby');
-    backToLobby.size(90, 30);
+    backToLobby.size(170, 40);
 
     backToLobby.mouseClicked(function(){
         leavePasswordChange();
@@ -546,20 +598,69 @@ function leaveDrawing()
 
 function sendDrawing()
 {
-    const white = [255, 255, 255, 255];
-    let pack = [];
-
-    pictureImage.loadPixels();
-    for (let y = 0; y < pictureImage.height; y++) 
+    if (millis() - 3000 <= lastMessageMillis)
     {
-        for (let x = 0; x < pictureImage.width; x++) 
-        {
-            pack.push(sameColor(white, pictureImage.get(x, y)));
-        }
+        chatBox.html('<b>\nYou are attempting to send drawings too fast, please wait 3 seconds between drawings.</b>\n ', true);
+        fullScroll();
     }
+    else
+    {
+        lastMessageMillis = millis();
+        const white = [255, 255, 255, 255];
+        let pack = [];
 
-    socket.emit('drawing', pack);
-    leaveDrawing();
+        pictureImage.loadPixels();
+        for (let y = 0; y < pictureImage.height; y++) 
+        {
+            for (let x = 0; x < pictureImage.width; x++) 
+            {
+                pack.push(sameColor(white, pictureImage.get(x, y)));
+            }
+        }
+
+        socket.emit('drawing', pack);
+        leaveDrawing();
+    }
+}
+
+function createFriends() //pls teach me now
+{
+    isFriendsOpen = true;
+
+    background = createDiv('');
+    background.attribute('class', 'modal');
+
+    leaveFriendsButton = createButton('Leave Friends');
+    leaveFriendsButton.mouseClicked(leaveFriends);
+    leaveFriendsButton.size(170, 40);
+    leaveFriendsButton.parent(background);
+
+    welcomeFriend = createElement('welcome', 'Welcome, <b>' + username + '</b>, to <b>Friends</b>.');
+    welcomeFriend.style('color', '#ddd');
+    welcomeFriend.parent(background);
+
+    friendChatBox = createElement('chatbox', '<i>&nbsp;&nbsp;&nbsp;&nbsp;Sorry buds, this is still not available, but it is being worked on!</b></i>', true); 
+    friendChatBox.parent(background);
+
+    friendsList = createElement('listbox', '<i>Friends List:\n</i>');
+    friendsList.parent(background);
+
+    socket.emit('requestFriends');
+
+    windowResized();
+}
+
+function leaveFriends()
+{
+    isFriendsOpen = false;
+
+    background.remove();
+
+    leaveFriendsButton.remove();
+    friendChatBox.remove();
+    friendsList.remove();
+
+    windowResized();
 }
 
 function createChatRoom()
@@ -662,10 +763,13 @@ function createChatRoom()
 
     typingText = createElement('typing', 'Nobody is typing at the moment...');
 
-    chatBox = createElement('chatbox', '<i>&nbsp;&nbsp;&nbsp;&nbsp;Welcome to <b>Room ' + room + '</b>! Type, then press enter to chat. Alternatively, click in the bottom right to draw a picture.\n\nVersion - <b>0.1.3</b>:</i>', true); 
-    chatBox.html("\n<i>=> Spam protection, and more admin/mod tools.</i>", true);
-    chatBox.html("\n<i>=> <b>/check [USERNAME]</b> to see if someone is online.</i>", true);
-    chatBox.html('\n<i>=> Generic bug fixes (internet explorer crashing, thank you Gamer for the report).</i>\n ', true);
+    chatBox = createElement('chatbox', '<i>&nbsp;&nbsp;&nbsp;&nbsp;Welcome to <b>Room ' + room + '</b>! Type, then press enter to chat. Alternatively, click in the bottom right to draw a picture.\n\nVersion - <b>0.1.4</b>:</i>', true); 
+    chatBox.html("\n<i>=> Even more spam protection!</i>", true);
+    chatBox.html("\n<i>=> <b>/check</b> is now only usable by + ranked users.</i>", true);
+    chatBox.html('\n<i>=> <b>/slow</b> and <b>/unslow</b> are commands for ++ ranked users to help prevent spamming.</i>', true);
+    chatBox.html("\n<i>=> If you want a rank, contact a mod/admin or use pictochat actively and respectfully, then you may automatically receive a rank at the end of the day.</i>\n ", true);
+    
+    if (tempRank != 'guest') { chatBox.html('\n<i> Type <b>/help</b> to see what commands you can use, and how to use them.</i>\n ', true); }
 
     userList = createElement('listbox', '<i>User List:\n</i>');
 
@@ -678,15 +782,6 @@ function createChatRoom()
         createLobby();
     });
     lobbyButton.size(170, 40);
-
-    friendsButton = createImg('friends.png');
-    friendsButton.size(40, 40);
-    friendsButton.mouseClicked(function(){ 
-        chatBox.html('\n<b>Sorry bud, not implemented yet. Friends and games/minigames should come soon(ish).</b>\n', true);
-        chatBox.html('Use the command <b>/propose suggestion [MESSAGE]</b> to propose what games should be added first, I think pool/billiards will be first.\n ', true);
-        fullScroll();
-    });
-    friendsButton.attribute('class', 'interact');
 
     lastChatName = '';
 
@@ -715,34 +810,50 @@ function addCommandLine()
     if (tempRank != 'guest')
     {
         chatBox.html('\nYour rank allows you to use these commands:\n', true);
-        chatBox.html('\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>=== Basic Commands ===</b>\n', true);
+        chatBox.html('\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>=== Regular Commands ===</b>\n', true);
         chatBox.html('<b>/style [STYLE (light, dark)]</b>\n', true);
-        chatBox.html('&nbsp;&nbsp;=> Changes the webpage to either light mode (default) or dark mode.\n\n', true);
+        chatBox.html('&nbsp;&nbsp;=> Changes the webpage to either light mode (default) or dark mode.\n', true);
         chatBox.html('<b>/whisper [NAME] [MESSAGE]</b>\n', true);
-        chatBox.html('&nbsp;&nbsp;=> Silently messages the user so nobody else can see, works across different and same rooms.\n\n', true);
-        chatBox.html('<b>/propose [TYPE (bug, suggestion)] [MESSAGE]</b>\n', true);
-        chatBox.html('&nbsp;&nbsp;=> Logs your suggestion or bug report so that Tim (Tigpan/pictochat owner) can read and act on your proposals after school.\n\n', true);
+        chatBox.html('&nbsp;&nbsp;=> Silently messages the user so nobody else can see, works across different and same rooms.\n', true);
+        chatBox.html('<b>/propose [TYPE (bug, suggestion, request)] [MESSAGE]</b>\n', true);
+        chatBox.html('&nbsp;&nbsp;=> Logs your bug report, suggestion, or request so that Tim (Tigpan/pictochat owner) can read and act on your proposals after school.\n', true);
         chatBox.html('<b>/notify [TYPE (enable, disable)]\n', true);
-        chatBox.html('&nbsp;&nbsp;=> Enables or disables notifications.\n\n', true);
-        chatBox.html('<b>/check [USERNAME]\n', true);
-        chatBox.html('&nbsp;&nbsp;=> Tells you if that account exists, if it exists what its ranks is, if it is online and what room it is.\n\n ', true);
-        if (tempRank == 'admin' || tempRank == 'mod')
+        chatBox.html('&nbsp;&nbsp;=> Enables or disables notifications.\n ', true);
+        if (tempRank != 'reg')
         {
-            chatBox.html('\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>=== Admin/Mod Commands ===</b>\n', true);
-            chatBox.html('<b>/rank [NAME] [RANK]</b>\n', true);
-            chatBox.html('&nbsp;&nbsp;=> Changes the rank for the given user to the one specified.\n\n', true);
-            chatBox.html('<b>/delete [NAME]</b>\n', true);
-            chatBox.html('&nbsp;&nbsp;=> PERMANENTLY deletes the account of the given user.\n\n', true);
-            chatBox.html('<b>/ipban [NAME] [MINUTES (max 360)]</b>\n', true);
-            chatBox.html('&nbsp;&nbsp;=> Disables that computer from using pictochat for the specified minutes. Also returns a code to use for /liftban.\n\n', true);
-            chatBox.html('<b>/liftban [CODE]</b>\n', true);
-            chatBox.html('&nbsp;&nbsp;=> Removes an ipban using the code returned in /ipban.\n', true);
-            chatBox.html('\nList of valid ranks: reg, +, ++, mod, admin, guest (guest cannot be changed or set)\n\n ', true);
+            chatBox.html('\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>=== + Commands ===</b>\n', true);
+            chatBox.html('<b>/check [USERNAME]\n', true);
+            chatBox.html('&nbsp;&nbsp;=> Tells you if that account exists, if it exists what its ranks is, if it is online and what room it is.\n ', true);
+
+            if (tempRank != '+')
+            {
+                chatBox.html('\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>=== + + Commands ===</b>\n', true);
+                chatBox.html('<b>/slow [USERNAME] [MINUTES (max 30)]\n', true);
+                chatBox.html('&nbsp;&nbsp;=> Slows down how fast a user can chat by a third, for the time specified.\n', true);
+                chatBox.html('<b>/unslow [USERNAME]\n', true);
+                chatBox.html('&nbsp;&nbsp;=> Removes slowness that is applied to a user.\n ', true);
+
+                if (tempRank == 'admin' || tempRank == 'mod')
+                {
+                    chatBox.html('\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>=== Admin/Mod Commands ===</b>\n', true);
+                    chatBox.html('<b>/rank [NAME] [RANK]</b>\n', true);
+                    chatBox.html('&nbsp;&nbsp;=> Changes the rank for the given user to the one specified.\n', true);
+                    chatBox.html('<b>/delete [NAME]</b>\n', true);
+                    chatBox.html('&nbsp;&nbsp;=> PERMANENTLY deletes the account of the given user.\n', true);
+                    chatBox.html('<b>/ipban [NAME] [MINUTES (max 360)]</b>\n', true);
+                    chatBox.html('&nbsp;&nbsp;=> Disables that computer from using pictochat for the specified minutes. Also returns a code to use for /liftban.\n', true);
+                    chatBox.html('<b>/liftban [CODE]</b>\n', true);
+                    chatBox.html('&nbsp;&nbsp;=> Removes an ipban using the code returned in /ipban.\n', true);
+                    chatBox.html('<b>/liftallbans</b>\n', true);
+                    chatBox.html('&nbsp;&nbsp;=> Removes all ip-bans currently active (use with caution).\n', true);
+                    chatBox.html('\nList of valid ranks: reg, +, ++, mod, admin, guest (guest cannot be changed or set)\n ', true);
+                }
+            }
         }
     }
     else
     {
-        chatBox.html("\nAs a guest you don't have access to any commands or extras (like dark mode), create an account to gain access to these.\n  ", true);
+        chatBox.html("\nAs a guest you don't have access to any commands or extras, create an account to gain access to these.\n  ", true);
     }
 }
 
@@ -916,7 +1027,6 @@ function leaveRoom()
     welcomeText.remove();
 
     lobbyButton.remove();
-    friendsButton.remove();
 }
 
 function windowResized() 
@@ -965,7 +1075,12 @@ function windowResized()
     }
     else if (state == States.lobby)
     {
-        logout.position(windowWidth - 98, 8);
+        logout.position(windowWidth - 178, 8);
+        if (tempRank != 'guest')
+        {
+            friendsButton.position(windowWidth - 178 - 48, 8);
+        }
+
         if (tempRank != 'guest')
         {
             changePassword.position(windowWidth - 198, windowHeight - 38);
@@ -993,7 +1108,11 @@ function windowResized()
     }
     else if (state == States.changePw)
     {
-        backToLobby.position(windowWidth - 98, 8);
+        backToLobby.position(windowWidth - 178, 8);
+        if (tempRank != 'guest')
+        {
+            friendsButton.position(windowWidth - 178 - 48, 8);
+        }
 
         changePWHolder.position(windowWidth * 0.333 + 6, 60);
         changePWName.size(changePWHolder.size().width - 24, 50);
@@ -1015,6 +1134,12 @@ function windowResized()
     }
     else if (state == States.room)
     {
+        lobbyButton.position(windowWidth - 178, 8);
+        if (tempRank != 'guest')
+        {
+            friendsButton.position(windowWidth - 178 - 48, 8);
+        }
+
         textInputField.position(0, windowHeight - (80 + 16));
         pictureButton.position(windowWidth - 80 - 8, windowHeight - 80 - 8);
         chatBox.position(0, 48);
@@ -1022,31 +1147,36 @@ function windowResized()
         chatBoxHeight = windowHeight - 80 - 32 - 48 - 8 - 24; // 8 for border
         typingText.position(0, windowHeight - (80 + 16 + 32));
         welcomeText.position(0,0);
+    }
+    
+    if (isDrawingOpen)
+    {
+        cancelPictureButton.position(8, windowHeight - 40 - 8);
+        smlPenButton.position(16 + 120 , windowHeight - 40 - 8);
+        midPenButton.position(16 + 120 + 48, windowHeight - 40 - 8);
+        lrgPenButton.position(16 + 120 + 48 + 48, windowHeight - 40 - 8);
+        masPenButton.position(16 + 120 + 48 + 48 + 48, windowHeight - 40 - 8);
+        paintBucketButton.position(16 + 120 + 48 + 48 + 48 + 48, windowHeight - 40 - 8);
 
-        lobbyButton.position(windowWidth - 180, 8);
-        friendsButton.position(windowWidth - 180 - 48, 8);
+        sendPictureButton.position(windowWidth - 120 - 8, windowHeight - 40 - 8);
+        blackColorButton.position(windowWidth - 120 - 8 - 48, windowHeight - 40 - 8);
+        whiteColorButton.position(windowWidth - 120 - 8 - 48 - 48, windowHeight - 40 - 8);
+        resetPictureButton.position(windowWidth - 120 - 8 - 48 - 48 - 128, windowHeight - 40 - 8);
 
-        if (isDrawingOpen)
-        {
-            cancelPictureButton.position(8, windowHeight - 40 - 8);
-            smlPenButton.position(16 + 120 , windowHeight - 40 - 8);
-            midPenButton.position(16 + 120 + 48, windowHeight - 40 - 8);
-            lrgPenButton.position(16 + 120 + 48 + 48, windowHeight - 40 - 8);
-            masPenButton.position(16 + 120 + 48 + 48 + 48, windowHeight - 40 - 8);
-            paintBucketButton.position(16 + 120 + 48 + 48 + 48 + 48, windowHeight - 40 - 8);
+        let xMod = (windowWidth - 60) / pictureWidth;
+        let yMod = (windowHeight - 90) / pictureHeight;
+        let multi = xMod < yMod ? xMod : yMod;
+        resizeCanvas(pictureWidth * multi, pictureHeight * multi);
+        
+        pictureCanvas.position(windowWidth / 2 - width / 2, windowHeight / 2 - 20 - height / 2);
+    }
+    else if (isFriendsOpen)
+    {
+        leaveFriendsButton.position(windowWidth - 178, 8);
 
-            sendPictureButton.position(windowWidth - 120 - 8, windowHeight - 40 - 8);
-            blackColorButton.position(windowWidth - 120 - 8 - 48, windowHeight - 40 - 8);
-            whiteColorButton.position(windowWidth - 120 - 8 - 48 - 48, windowHeight - 40 - 8);
-            resetPictureButton.position(windowWidth - 120 - 8 - 48 - 48 - 128, windowHeight - 40 - 8);
-
-            let xMod = (windowWidth - 60) / pictureWidth;
-            let yMod = (windowHeight - 90) / pictureHeight;
-            let multi = xMod < yMod ? xMod : yMod;
-            resizeCanvas(pictureWidth * multi, pictureHeight * multi);
-            
-            pictureCanvas.position(windowWidth / 2 - width / 2, windowHeight / 2 - 20 - height / 2);
-        }
+        welcomeFriend.position(0,0);
+        friendChatBox.position(0, 48);
+        friendsList.position(windowWidth - 240, 48);
     }
 }
 
@@ -1069,6 +1199,17 @@ function updateUserList(data)
         userList.html("\n\n" + (data[i].active ? "● " : "◌ ") + getNameSpanner(data[i].rank) + data[i].un + "</span>", true);
     }
     userList.html("\n ", true);
+}
+
+function updateFriendList(data)
+{
+    friendsList.html("<i>Friends List:</i>");
+
+    for (let i = 0; i < data.length; i++)
+    {
+        friendsList.html("\n\n" + (data[i].active ? "● " : "◌ ") + getNameSpanner(data[i].rank) + data[i].un + "</span>", true);
+    }
+    friendsList.html("\n ", true);
 }
 
 function addChatMessage(data)
@@ -1096,7 +1237,7 @@ function addChatMessage(data)
         }
     }
 
-    notification(data.username + ": " + data.message);
+    notification(data.username + ": " + data.message, false);
 
     lastChatName = data.username;
 
@@ -1147,13 +1288,13 @@ function addDrawing(data)
     {
         if (data.image[i])
         {
-            pixelData[i * 4] = 255;   // set every red pixel element to 255
+            pixelData[i * 4] = 255;   // set every pixel element to 255
             pixelData[i * 4 + 1] = 255; 
             pixelData[i * 4 + 2] = 255; 
         }
         else
         {
-            pixelData[i * 4] = 0;   // set every red pixel element to 255
+            pixelData[i * 4] = 0;   // set every pixel element to 255
             pixelData[i * 4 + 1] = 0; 
             pixelData[i * 4 + 2] = 0; 
         }
@@ -1176,7 +1317,7 @@ function addDrawing(data)
     chatBox.elt.appendChild(image);
     chatBox.html("\n  ", true);
 
-    notification(data.username + " sent a drawing.");
+    notification(data.username + " sent a drawing.", false);
 
     lastChatName = data.username;
 
@@ -1248,7 +1389,7 @@ function addChatAnnouncement(data)
     chatBox.html("\n\n<i>" + data.spanner + data.time + " - " + data.username + data.message + "</i></span>\n ", true);
     lastChatName = '';
 
-    notification(data.username + data.message);
+    notification(data.username + data.message, false);
 
     if (isTop)
     {
@@ -1271,6 +1412,12 @@ function draw()
         {
             lastMillis = millis();
             socket.emit('status', hasFocus)
+        }
+
+        if (isSlowed && millis() >= slowMillis)
+        {
+            isSlowed = false;
+            chatBox.html('\n<span class="slow">Your slowness has run out, you can now chat freely.</span>\n ', true);
         }
 
         if (isDrawingOpen)
@@ -1400,13 +1547,21 @@ function keyPressed()
         {
             chatBox.html('<b>\nYour message is too long please keep it under 1500 characters.</b>\n ', true);
         }
-        else if (textInputField.value().split(/\r\n|\r|\n/).length >= 20)
+        else if (textInputField.value().split(/\r\n|\r|\n/).length >= 15)
         {
-            chatBox.html('<b>\nYour message is too long please keep it under 20 lines.</b>\n ', true);
+            chatBox.html('<b>\nYour message is too long please keep it under 15 lines.</b>\n ', true);
         }
-        else if (millis() - 1500 < lastMessageMillis)
+        else if (millis() - 10000 * (isSlowed ? 3 : 1) < lastMessageMillis && lastLength >= 500 && textInputField.value().length >= 500)
         {
-            chatBox.html('<b>\nYou are sending messages too fast, please wait 1.5 seconds between messages.</b>\n ', true);
+            chatBox.html('<b>\nYou are sending large messages too fast, please wait ' + (10 * (isSlowed ? 3 : 1)) + ' seconds between sending large messages.</b>\n ', true);
+        }
+        else if (millis() - 7500 * (isSlowed ? 3 : 1) < lastMessageMillis && lastLength >= 500)
+        {
+            chatBox.html('<b>\nYou are sending large messages too fast, please wait ' + (7.5 * (isSlowed ? 3 : 1)) + ' seconds after sending large messages.</b>\n ', true);
+        }
+        else if (millis() - 1500 * (isSlowed ? 3 : 1) < lastMessageMillis)
+        {
+            chatBox.html('<b>\nYou are sending messages too fast, please wait ' + (1.5 * (isSlowed ? 3 : 1)) + ' seconds between messages.</b>\n ', true);
         }
         else
         {
@@ -1451,10 +1606,15 @@ function keyPressed()
                     document.getElementById('pagestyle').setAttribute('href', 'css/dark.css');
                     isDarkMode = true;
                 }
+                else if (textInputField.value().split(' ').length == 2 && textInputField.value().split(' ')[1] == 'oled')
+                {
+                    document.getElementById('pagestyle').setAttribute('href', 'css/oled.css');
+                    isDarkMode = true;
+                }
                 else
                 {
-                    chatBox.html('\nYour options for this command are: <b>light</b> or <b>dark</b>.', true);
-                    chatBox.html('\n/style [STYLE (light, dark)].\n ', true);
+                    chatBox.html('\nYour options for this command are: <b>light</b>, <b>dark</b>, or <b>oled</b>.', true);
+                    chatBox.html('\n/style [STYLE (light, dark, oled)].\n ', true);
                 }
                 resetFields = true;
             }
@@ -1467,13 +1627,14 @@ function keyPressed()
                 }
                 else
                 {
-                    chatBox.html('\nYour options for this command are: <b>bug</b> or <b>suggestion</b>.', true);
-                    chatBox.html('\n/propose [TYPE (bug, suggestion)] [MESSAGE].\n ', true);
+                    chatBox.html('\nYour options for this command are: <b>bug</b>, <b>suggestion</b>, or <b>request</b>.', true);
+                    chatBox.html('\n/propose [TYPE (bug, suggestion, request)] [MESSAGE].\n ', true);
                 }
                 resetFields = true;
             }
             else if (textInputField.value() != '')
             {
+                lastLength = textInputField.value().length;
                 socket.emit('chat', textInputField.value());
                 resetFields = true;
             }
