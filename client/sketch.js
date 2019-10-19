@@ -81,6 +81,9 @@ let cancelPictureButton;
 let sendPictureButton;
 let resetPictureButton;
 
+let pictureErrorText;
+let pictureErrorTimer = 0;
+
 let pictureCanvas;
 let pictureImage;
 
@@ -156,6 +159,8 @@ let notifyMessage = 'Pictochat';
 
 let slowMillis = 0;
 let isSlowed = false;
+
+const slowModeSlowdown = 3;
 
 function checkPageFocus() 
 {
@@ -616,13 +621,17 @@ function leaveDrawing()
     greenColorButton.remove();
     blueColorButton.remove();
     yellowColorButton.remove();
+
+    pictureErrorText.remove();
 }
 
 function sendDrawing()
 {
-    if (millis() - 3000 <= lastMessageMillis)
+    if (millis() - 4000 * (isSlowed ? slowModeSlowdown : 1) <= lastMessageMillis)
     {
-        chatBox.html('<b>\nYou are attempting to send drawings too fast, please wait 3 seconds between drawings.</b>\n ', true);
+        chatBox.html('<b>\nYou are attempting to send drawings too fast, please wait ' + (4 * (isSlowed ? slowModeSlowdown : 1)) + ' seconds between drawings.</b>\n ', true);
+        pictureErrorText.html('<b>\nYou are attempting to send drawings too fast, please wait ' + (4 * (isSlowed ? slowModeSlowdown : 1)) + ' seconds between drawings.</b>');
+        pictureErrorTimer = millis() + 3000;
         fullScroll();
     }
     else
@@ -747,6 +756,29 @@ function leaveFriends()
     friendRequestsButton.remove();
 }
 
+function selectPenSizeButton(button)
+{
+    smlPenButton.attribute('class', 'interact');
+    midPenButton.attribute('class', 'interact');
+    lrgPenButton.attribute('class', 'interact');
+    masPenButton.attribute('class', 'interact');
+    paintBucketButton.attribute('class', 'interact');
+
+    button.attribute('class', 'selected');
+}
+
+function selectPenColorButton(button)
+{
+    whiteColorButton.attribute('class', 'interact');
+    blackColorButton.attribute('class', 'interact');
+    redColorButton.attribute('class', 'interact');
+    greenColorButton.attribute('class', 'interact');
+    blueColorButton.attribute('class', 'interact');
+    yellowColorButton.attribute('class', 'interact');
+
+    button.attribute('class', 'selected');
+}
+
 function createChatRoom()
 {
     textInputField = createElement('textarea', '');
@@ -794,39 +826,43 @@ function createChatRoom()
             resetPictureButton.parent(background);
        
             smlPenButton = createImg('smlPen.png');
-            smlPenButton.mouseClicked(function(){ pen = 1; });
+            smlPenButton.mouseClicked(function(){ pen = 1; selectPenSizeButton(smlPenButton); });
             createDrawingButton(smlPenButton);
             midPenButton = createImg('midPen.png');
-            midPenButton.mouseClicked(function(){ pen = 2; });
+            midPenButton.mouseClicked(function(){ pen = 2; selectPenSizeButton(midPenButton); });
             createDrawingButton(midPenButton);
             lrgPenButton = createImg('lrgPen.png');
-            lrgPenButton.mouseClicked(function(){ pen = 3; });
+            lrgPenButton.mouseClicked(function(){ pen = 3; selectPenSizeButton(lrgPenButton); });
             createDrawingButton(lrgPenButton);
             masPenButton = createImg('masPen.png');
-            masPenButton.mouseClicked(function(){ pen = 4; });
+            masPenButton.mouseClicked(function(){ pen = 4; selectPenSizeButton(masPenButton); });
             createDrawingButton(masPenButton);
             paintBucketButton = createImg('paintBucket.png');
-            paintBucketButton.mouseClicked(function(){ pen = -1; });
+            paintBucketButton.mouseClicked(function(){ pen = -1; selectPenSizeButton(paintBucketButton); });
             createDrawingButton(paintBucketButton);
 
             whiteColorButton = createImg('whiteColor.png');
-            whiteColorButton.mouseClicked(function(){ penColor = whiteC; });
+            whiteColorButton.mouseClicked(function(){ penColor = whiteC; selectPenColorButton(whiteColorButton); });
             createDrawingButton(whiteColorButton);
             blackColorButton = createImg('blackColor.png');
-            blackColorButton.mouseClicked(function(){ penColor = blackC; });
+            blackColorButton.mouseClicked(function(){ penColor = blackC; selectPenColorButton(blackColorButton); });
             createDrawingButton(blackColorButton);
             redColorButton = createImg('redColor.png');
-            redColorButton.mouseClicked(function(){ penColor = redC; });
+            redColorButton.mouseClicked(function(){ penColor = redC; selectPenColorButton(redColorButton); });
             createDrawingButton(redColorButton);
             greenColorButton = createImg('greenColor.png');
-            greenColorButton.mouseClicked(function(){ penColor = greenC; });
+            greenColorButton.mouseClicked(function(){ penColor = greenC; selectPenColorButton(greenColorButton); });
             createDrawingButton(greenColorButton);
             blueColorButton = createImg('blueColor.png');
-            blueColorButton.mouseClicked(function(){ penColor = blueC; });
+            blueColorButton.mouseClicked(function(){ penColor = blueC; selectPenColorButton(blueColorButton); });
             createDrawingButton(blueColorButton);
             yellowColorButton = createImg('yellowColor.png');
-            yellowColorButton.mouseClicked(function(){ penColor = yellowC; });
+            yellowColorButton.mouseClicked(function(){ penColor = yellowC; selectPenColorButton(yellowColorButton); });
             createDrawingButton(yellowColorButton);
+    
+            pictureErrorText = createElement('errorText', '');
+            pictureErrorText.size(windowWidth / 2, 100);
+            pictureErrorText.parent(background);
 
             if (pictureCanvas != undefined)
             {
@@ -880,8 +916,18 @@ function createDrawingButton(button)
 function resetPicture()
 {
     pen = 2;
+    midPenButton.attribute('class', 'selected');
+
     penColor = isDarkMode ? whiteC : blackC;
     let usedColors = isDarkMode ? blackC : whiteC;
+    if (isDarkMode)
+    {
+        whiteColorButton.attribute('class', 'selected');
+    }
+    else
+    {
+        blackColorButton.attribute('class', 'selected');
+    }
 
     pictureImage.loadPixels();
     for (let x = 0; x < pictureImage.width; x++) 
@@ -1272,6 +1318,8 @@ function windowResized()
         resizeCanvas(pictureWidth * multi, pictureHeight * multi);
         
         pictureCanvas.position(windowWidth / 2 - width / 2, windowHeight / 2 - 20 - height / 2);
+
+        pictureErrorText.position(windowWidth / 4, windowHeight - 130);
     }
     else if (isFriendsOpen)
     {
@@ -1533,6 +1581,10 @@ function draw()
 
         if (isDrawingOpen)
         {
+            if (millis() > pictureErrorTimer)
+            {
+                pictureErrorText.html('');
+            }
             pictureCanvas.background(147);
             if (mouseIsPressed && pen >= 0)
             {
@@ -1682,17 +1734,17 @@ function keyPressed()
             {
                 chatBox.html('<b>\nYour message is too long please keep it under 15 lines.</b>\n ', true);
             }
-            else if (millis() - 10000 * (isSlowed ? 3 : 1) < lastMessageMillis && lastLength >= 500 && textInputField.value().length >= 500)
+            else if (millis() - 10000 * (isSlowed ? slowModeSlowdown : 1) < lastMessageMillis && lastLength >= 500 && textInputField.value().length >= 500)
             {
-                chatBox.html('<b>\nYou are sending large messages too fast, please wait ' + (10 * (isSlowed ? 3 : 1)) + ' seconds between sending large messages.</b>\n ', true);
+                chatBox.html('<b>\nYou are sending large messages too fast, please wait ' + (10 * (isSlowed ? slowModeSlowdown : 1)) + ' seconds between sending large messages.</b>\n ', true);
             }
-            else if (millis() - 7500 * (isSlowed ? 3 : 1) < lastMessageMillis && lastLength >= 500)
+            else if (millis() - 7500 * (isSlowed ? slowModeSlowdown : 1) < lastMessageMillis && lastLength >= 500)
             {
-                chatBox.html('<b>\nYou are sending large messages too fast, please wait ' + (7.5 * (isSlowed ? 3 : 1)) + ' seconds after sending large messages.</b>\n ', true);
+                chatBox.html('<b>\nYou are sending large messages too fast, please wait ' + (7.5 * (isSlowed ? slowModeSlowdown : 1)) + ' seconds after sending large messages.</b>\n ', true);
             }
-            else if (millis() - 1500 * (isSlowed ? 3 : 1) < lastMessageMillis)
+            else if (millis() - 1500 * (isSlowed ? slowModeSlowdown : 1) < lastMessageMillis)
             {
-                chatBox.html('<b>\nYou are sending messages too fast, please wait ' + (1.5 * (isSlowed ? 3 : 1)) + ' seconds between messages.</b>\n ', true);
+                chatBox.html('<b>\nYou are sending messages too fast, please wait ' + (1.5 * (isSlowed ? slowModeSlowdown : 1)) + ' seconds between messages.</b>\n ', true);
             }
             else
             {

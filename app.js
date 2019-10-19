@@ -538,7 +538,7 @@ function mainFunc(socket)
 		socket.on('requestFriends', function(){
 			try
 			{
-				if (socket.id in chatterList)
+				if (socket.id in chatterList && chatterList[socket.id].rank != 'guest')
 				{
 					let pack = [];
 					let changed = false;
