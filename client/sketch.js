@@ -89,8 +89,13 @@ let midPenButton;
 let lrgPenButton;
 let masPenButton;
 let paintBucketButton;
+
 let whiteColorButton;
 let blackColorButton;
+let redColorButton;
+let greenColorButton;
+let blueColorButton;
+let yellowColorButton;
 
 //friends
 let leaveFriendsButton;
@@ -103,9 +108,6 @@ let friendsListButton;
 let friendRequestsButton;
 
 //end
-
-let pen = 2;
-let penColor = [0, 0, 0, 255];
 
 let resetFields = false;
 let lastMessageTimeStamp = null;
@@ -130,6 +132,16 @@ let isDarkMode = false;
 
 const pictureWidth = 280;
 const pictureHeight = 170;
+
+const whiteC = [255, 255, 255, 255];
+const blackC = [0, 0, 0, 255];
+const redC = [255, 0, 0, 255];
+const greenC = [50, 205, 50, 255];
+const blueC = [0, 0, 255, 255];
+const yellowC = [240, 210, 0, 255];
+
+let pen = 2;
+let penColor = blackC;
 
 let isDrawingOpen = false;
 let forceFullScroll = -1;
@@ -239,6 +251,8 @@ function setup()
             }
         }
         setCookie('ban', new Date().getTime() + data * 60 * 1000, 1);
+        window.localStorage.setItem('ban', new Date().getTime() + data * 60 * 100);
+        sessionStorage.setItem('ban', new Date().getTime() + data * 60 * 100);
     });
     socket.on('slow', function(data) {
         if (data == -1)
@@ -330,10 +344,10 @@ function kill(message)
     if (state == States.room) { leaveRoom(); }
     if (state == States.lobby) { leaveLobby(); }
     if (state == States.changePw) { leavePasswordChange(); }
-    if (state != States.main) { createMain(); }
+    if (state != States.main) { state = States.main; createMain(); }
     if (isFriendsOpen) { leaveFriends(); }
     if (isDrawingOpen) { leaveDrawing(); }
-    state = States.main;
+
     if (message != undefined)
     {
         errorText.html(message)
@@ -404,7 +418,7 @@ function createMain()
     errorText = createElement('errorText', '');
     errorText.size(windowWidth / 2, 100);
 
-    if (friendsButton != undefined)
+    if (friendsButton != undefined && friendsButton != null)
     {
         friendsButton.remove();
         friendsButton = undefined;
@@ -598,6 +612,10 @@ function leaveDrawing()
 
     blackColorButton.remove();
     whiteColorButton.remove();
+    redColorButton.remove();
+    greenColorButton.remove();
+    blueColorButton.remove();
+    yellowColorButton.remove();
 }
 
 function sendDrawing()
@@ -610,7 +628,6 @@ function sendDrawing()
     else
     {
         lastMessageMillis = millis();
-        const white = [255, 255, 255, 255];
         let pack = [];
 
         pictureImage.loadPixels();
@@ -618,13 +635,63 @@ function sendDrawing()
         {
             for (let x = 0; x < pictureImage.width; x++) 
             {
-                pack.push(sameColor(white, pictureImage.get(x, y)));
+                pack.push(getColorCode(pictureImage.get(x, y)));
             }
         }
 
         socket.emit('drawing', pack);
         leaveDrawing();
     }
+}
+
+function getColorCode(color)
+{
+    if (sameColor(whiteC, color))
+    {
+        return 0;
+    }
+    if (sameColor(blackC, color))
+    {
+        return 1;
+    }
+    if (sameColor(redC, color))
+    {
+        return 2;
+    }
+    if (sameColor(greenC, color))
+    {
+        return 3;
+    }
+    if (sameColor(blueC, color))
+    {
+        return 4;
+    }
+    return 5;
+}
+
+function setColorCode(code)
+{
+    if (code == 0)
+    {
+        return whiteC;
+    }
+    if (code == 1)
+    {
+        return blackC;
+    }
+    if (code == 2)
+    {
+        return redC;
+    }
+    if (code == 3)
+    {
+        return greenC;
+    }
+    if (code == 4)
+    {
+        return blueC;
+    }
+    return yellowC;
 }
 
 function createFriends() //pls teach me now
@@ -678,8 +745,6 @@ function leaveFriends()
 
     friendsListButton.remove();
     friendRequestsButton.remove();
-    
-    windowResized();
 }
 
 function createChatRoom()
@@ -729,41 +794,39 @@ function createChatRoom()
             resetPictureButton.parent(background);
        
             smlPenButton = createImg('smlPen.png');
-            smlPenButton.size(40, 40);
             smlPenButton.mouseClicked(function(){ pen = 1; });
-            smlPenButton.parent(background);
-            smlPenButton.attribute('class', 'interact');
+            createDrawingButton(smlPenButton);
             midPenButton = createImg('midPen.png');
-            midPenButton.size(40, 40);
             midPenButton.mouseClicked(function(){ pen = 2; });
-            midPenButton.parent(background);
-            midPenButton.attribute('class', 'interact');
+            createDrawingButton(midPenButton);
             lrgPenButton = createImg('lrgPen.png');
-            lrgPenButton.size(40, 40);
             lrgPenButton.mouseClicked(function(){ pen = 3; });
-            lrgPenButton.parent(background);
-            lrgPenButton.attribute('class', 'interact');
+            createDrawingButton(lrgPenButton);
             masPenButton = createImg('masPen.png');
-            masPenButton.size(40, 40);
             masPenButton.mouseClicked(function(){ pen = 4; });
-            masPenButton.parent(background);
-            masPenButton.attribute('class', 'interact');
+            createDrawingButton(masPenButton);
             paintBucketButton = createImg('paintBucket.png');
-            paintBucketButton.size(40, 40);
             paintBucketButton.mouseClicked(function(){ pen = -1; });
-            paintBucketButton.parent(background);
-            paintBucketButton.attribute('class', 'interact');
+            createDrawingButton(paintBucketButton);
 
             whiteColorButton = createImg('whiteColor.png');
-            whiteColorButton.size(40, 40);
-            whiteColorButton.mouseClicked(function(){ penColor = [255, 255, 255, 255]; });
-            whiteColorButton.parent(background);
-            whiteColorButton.attribute('class', 'interact');
+            whiteColorButton.mouseClicked(function(){ penColor = whiteC; });
+            createDrawingButton(whiteColorButton);
             blackColorButton = createImg('blackColor.png');
-            blackColorButton.size(40, 40);
-            blackColorButton.mouseClicked(function(){ penColor = [0, 0, 0, 255]; });
-            blackColorButton.parent(background);
-            blackColorButton.attribute('class', 'interact');
+            blackColorButton.mouseClicked(function(){ penColor = blackC; });
+            createDrawingButton(blackColorButton);
+            redColorButton = createImg('redColor.png');
+            redColorButton.mouseClicked(function(){ penColor = redC; });
+            createDrawingButton(redColorButton);
+            greenColorButton = createImg('greenColor.png');
+            greenColorButton.mouseClicked(function(){ penColor = greenC; });
+            createDrawingButton(greenColorButton);
+            blueColorButton = createImg('blueColor.png');
+            blueColorButton.mouseClicked(function(){ penColor = blueC; });
+            createDrawingButton(blueColorButton);
+            yellowColorButton = createImg('yellowColor.png');
+            yellowColorButton.mouseClicked(function(){ penColor = yellowC; });
+            createDrawingButton(yellowColorButton);
 
             if (pictureCanvas != undefined)
             {
@@ -807,11 +870,18 @@ function createChatRoom()
     windowResized();
 }
 
+function createDrawingButton(button)
+{
+    button.size(40, 40);
+    button.parent(background);
+    button.attribute('class', 'interact');
+}
+
 function resetPicture()
 {
     pen = 2;
-    penColor = isDarkMode ? [255, 255, 255, 255] : [0, 0, 0, 255];
-    let usedColors = isDarkMode ? [0, 0, 0, 255] : [255, 255, 255, 255];
+    penColor = isDarkMode ? whiteC : blackC;
+    let usedColors = isDarkMode ? blackC : whiteC;
 
     pictureImage.loadPixels();
     for (let x = 0; x < pictureImage.width; x++) 
@@ -876,10 +946,18 @@ function addCommandLine()
     }
 }
 
+function allowedToJoin()
+{
+    let cBan = getCookie('ban') == '' ? 0 : parseInt(getCookie('ban'));
+    let lBan = window.localStorage.getItem('ban') == undefined ? 0 : window.localStorage.getItem('ban');
+    let sBan = sessionStorage.getItem('ban') == undefined ? 0 : sessionStorage.getItem('ban');
+    return Math.max(cBan, lBan, sBan);
+}
+
 function attemptGuest()
 {
-    let ban = getCookie('ban');
-    if (ban == '' || parseInt(ban) < new Date().getTime())
+    let ban = allowedToJoin();
+    if (ban < new Date().getTime())
     {
         tempUsername = guestUsernameField.value();
         socket.emit('init', tempUsername);
@@ -887,14 +965,14 @@ function attemptGuest()
     }
     else
     {
-        errorText.html('Looks like you have been ip-banned. Your ban has ' + (ceil((parseInt(ban) - new Date().getTime()) / 1000 / 60 * 10) / 10) + ' minutes remaining...');
+        errorText.html('Looks like you have been ip-banned. Your ban has ' + (ceil((ban - new Date().getTime()) / 1000 / 60 * 10) / 10) + ' minutes remaining...');
     }
 }
 
 function attemptLogin() 
 {
-    let ban = getCookie('ban');
-    if (ban == '' || parseInt(ban) < new Date().getTime())
+    let ban = allowedToJoin();
+    if (ban < new Date().getTime())
     {
         errorText.html('');
         tempUsername = loginUsernameField.value();
@@ -907,14 +985,14 @@ function attemptLogin()
     }
     else
     {
-        errorText.html('Looks like you have been ip-banned. Your ban has ' + (ceil((parseInt(ban) - new Date().getTime()) / 1000 / 60 * 10) / 10) + ' minutes remaining...');
+        errorText.html('Looks like you have been ip-banned. Your ban has ' + (ceil((ban - new Date().getTime()) / 1000 / 60 * 10) / 10) + ' minutes remaining...');
     }
 }
 
 function attemptRegister() 
 {
-    let ban = getCookie('ban');
-    if (ban == '' || parseInt(ban) < new Date().getTime())
+    let ban = allowedToJoin();
+    if (ban < new Date().getTime())
     {
         errorText.html('');
         if (registerPasswordField.value() == registerConfirmPasswordField.value())
@@ -938,7 +1016,7 @@ function attemptRegister()
     }
     else
     {
-        errorText.html('Looks like you have been ip-banned. Your ban has ' + (ceil((parseInt(ban) - new Date().getTime()) / 1000 / 60 * 10) / 10) + ' minutes remaining...');
+        errorText.html('Looks like you have been ip-banned. Your ban has ' + (ceil((ban - new Date().getTime()) / 1000 / 60 * 10) / 10) + ' minutes remaining...');
     }
 }
 
@@ -1178,9 +1256,15 @@ function windowResized()
         paintBucketButton.position(16 + 120 + 48 + 48 + 48 + 48, windowHeight - 40 - 8);
 
         sendPictureButton.position(windowWidth - 120 - 8, windowHeight - 40 - 8);
-        blackColorButton.position(windowWidth - 120 - 8 - 48, windowHeight - 40 - 8);
-        whiteColorButton.position(windowWidth - 120 - 8 - 48 - 48, windowHeight - 40 - 8);
-        resetPictureButton.position(windowWidth - 120 - 8 - 48 - 48 - 128, windowHeight - 40 - 8);
+
+        redColorButton.position(windowWidth - 120 - 8 - 48, windowHeight - 40 - 8);
+        greenColorButton.position(windowWidth - 120 - 8 - 48 - 48, windowHeight - 40 - 8);
+        blueColorButton.position(windowWidth - 120 - 8 - 48 - 48 - 48, windowHeight - 40 - 8);
+        yellowColorButton.position(windowWidth - 120 - 8 - 48 - 48 - 48 - 48, windowHeight - 40 - 8);
+        blackColorButton.position(windowWidth - 120 - 8 - 48 - 48 - 48 - 48 - 48, windowHeight - 40 - 8);
+        whiteColorButton.position(windowWidth - 120 - 8 - 48 - 48 - 48 - 48 - 48 - 48, windowHeight - 40 - 8);
+
+        resetPictureButton.position(windowWidth - 120 - 8 - 48 - 48 - 48 - 48 - 48 - 48 - 128, windowHeight - 40 - 8);
 
         let xMod = (windowWidth - 60) / pictureWidth;
         let yMod = (windowHeight - 90) / pictureHeight;
@@ -1321,18 +1405,10 @@ function addDrawing(data)
     // manipulate some pixel elements
     for(let i = 0; i < data.image.length; ++i)
     {
-        if (data.image[i])
-        {
-            pixelData[i * 4] = 255;   // set every pixel element to 255
-            pixelData[i * 4 + 1] = 255; 
-            pixelData[i * 4 + 2] = 255; 
-        }
-        else
-        {
-            pixelData[i * 4] = 0;   // set every pixel element to 255
-            pixelData[i * 4 + 1] = 0; 
-            pixelData[i * 4 + 2] = 0; 
-        }
+        let c = setColorCode(data.image[i]);
+        pixelData[i * 4] = red(c); 
+        pixelData[i * 4 + 1] = green(c); 
+        pixelData[i * 4 + 2] = blue(c); 
         pixelData[i * 4 + 3] = 255; // make this pixel opaque
     }
 
@@ -1573,107 +1649,128 @@ function sendTyping()
 
 function keyPressed()
 {
-    if (keyCode == 13 && !keyIsDown(16) && textInputField.value() != '') // not shift and enter
+    if (state == States.main)
     {
-        textInputField.value(textInputField.value().replace(/^\s+|\s+$/g, '')); //remove start and end
-        textInputField.value(textInputField.value().replace(/\n\s*\n/g, '\n')); //remove duplicates
+        if (keyCode == 13) //enter
+        {
+            if (guestUsernameField.elt === document.activeElement)
+            {
+                attemptGuest();
+            }
+            else if (loginUsernameField.elt === document.activeElement || loginPasswordField.elt === document.activeElement)
+            {
+                attemptLogin();
+            }
+            else if (registerUsernameField.elt === document.activeElement || registerPasswordField.elt === document.activeElement || registerConfirmPasswordField.elt === document.activeElement)
+            {
+                attemptRegister();
+            }
+        }
+    }
+    else
+    {
+        if (keyCode == 13 && !keyIsDown(16) && textInputField.value() != '') // not shift and enter
+        {
+            textInputField.value(textInputField.value().replace(/^\s+|\s+$/g, '')); //remove start and end
+            textInputField.value(textInputField.value().replace(/\n\s*\n/g, '\n')); //remove duplicates
 
-        if (textInputField.value().length >= 1500)
-        {
-            chatBox.html('<b>\nYour message is too long please keep it under 1500 characters.</b>\n ', true);
-        }
-        else if (textInputField.value().split(/\r\n|\r|\n/).length >= 15)
-        {
-            chatBox.html('<b>\nYour message is too long please keep it under 15 lines.</b>\n ', true);
-        }
-        else if (millis() - 10000 * (isSlowed ? 3 : 1) < lastMessageMillis && lastLength >= 500 && textInputField.value().length >= 500)
-        {
-            chatBox.html('<b>\nYou are sending large messages too fast, please wait ' + (10 * (isSlowed ? 3 : 1)) + ' seconds between sending large messages.</b>\n ', true);
-        }
-        else if (millis() - 7500 * (isSlowed ? 3 : 1) < lastMessageMillis && lastLength >= 500)
-        {
-            chatBox.html('<b>\nYou are sending large messages too fast, please wait ' + (7.5 * (isSlowed ? 3 : 1)) + ' seconds after sending large messages.</b>\n ', true);
-        }
-        else if (millis() - 1500 * (isSlowed ? 3 : 1) < lastMessageMillis)
-        {
-            chatBox.html('<b>\nYou are sending messages too fast, please wait ' + (1.5 * (isSlowed ? 3 : 1)) + ' seconds between messages.</b>\n ', true);
-        }
-        else
-        {
-            lastMessageMillis = millis();
-            if (textInputField.value() == '/help')
+            if (textInputField.value().length >= 1500)
             {
-                addCommandLine();
-                resetFields = true;
+                chatBox.html('<b>\nYour message is too long please keep it under 1500 characters.</b>\n ', true);
             }
-            else if (tempRank != 'guest' && textInputField.value().split(' ')[0] == '/notify')
+            else if (textInputField.value().split(/\r\n|\r|\n/).length >= 15)
             {
-                if (textInputField.value().split(' ').length == 2 && textInputField.value().split(' ')[1] == 'disable')
+                chatBox.html('<b>\nYour message is too long please keep it under 15 lines.</b>\n ', true);
+            }
+            else if (millis() - 10000 * (isSlowed ? 3 : 1) < lastMessageMillis && lastLength >= 500 && textInputField.value().length >= 500)
+            {
+                chatBox.html('<b>\nYou are sending large messages too fast, please wait ' + (10 * (isSlowed ? 3 : 1)) + ' seconds between sending large messages.</b>\n ', true);
+            }
+            else if (millis() - 7500 * (isSlowed ? 3 : 1) < lastMessageMillis && lastLength >= 500)
+            {
+                chatBox.html('<b>\nYou are sending large messages too fast, please wait ' + (7.5 * (isSlowed ? 3 : 1)) + ' seconds after sending large messages.</b>\n ', true);
+            }
+            else if (millis() - 1500 * (isSlowed ? 3 : 1) < lastMessageMillis)
+            {
+                chatBox.html('<b>\nYou are sending messages too fast, please wait ' + (1.5 * (isSlowed ? 3 : 1)) + ' seconds between messages.</b>\n ', true);
+            }
+            else
+            {
+                lastMessageMillis = millis();
+                if (textInputField.value() == '/help')
                 {
-                    everNotify = false;
-                    chatBox.html('\nAwww. Sorry for annoying you, please leave a suggestion using <b>/propose</b> on how we could improve. :(\n ', true); 
+                    addCommandLine();
+                    resetFields = true;
                 }
-                else if (textInputField.value().split(' ').length == 2 && textInputField.value().split(' ')[1] == 'enable')
+                else if (tempRank != 'guest' && textInputField.value().split(' ')[0] == '/notify')
                 {
-                    chatBox.html('\nThank you for enabling notifications. :)\n ', true); 
-                    everNotify = true;
-                    if (!("Notification" in window)) 
+                    if (textInputField.value().split(' ').length == 2 && textInputField.value().split(' ')[1] == 'disable')
                     {
-                        Notification.requestPermission();
+                        everNotify = false;
+                        chatBox.html('\nAwww. Sorry for annoying you, please leave a suggestion using <b>/propose</b> on how we could improve. :(\n ', true); 
                     }
+                    else if (textInputField.value().split(' ').length == 2 && textInputField.value().split(' ')[1] == 'enable')
+                    {
+                        chatBox.html('\nThank you for enabling notifications. :)\n ', true); 
+                        everNotify = true;
+                        if (!("Notification" in window)) 
+                        {
+                            Notification.requestPermission();
+                        }
+                    }
+                    else
+                    {
+                        chatBox.html('\nYour options for this command are: <b>enable</b> or <b>disable</b>.', true);
+                        chatBox.html('\n/notify [TYPE (enable, disable)].\n ', true);
+                    }
+                    resetFields = true;
                 }
-                else
+                else if (tempRank != 'guest' && textInputField.value().split(' ')[0] == '/style')
                 {
-                    chatBox.html('\nYour options for this command are: <b>enable</b> or <b>disable</b>.', true);
-                    chatBox.html('\n/notify [TYPE (enable, disable)].\n ', true);
+                    if (textInputField.value().split(' ').length == 2 && textInputField.value().split(' ')[1] == 'light')
+                    {
+                        document.getElementById('pagestyle').setAttribute('href', 'css/light.css');
+                        isDarkMode = false;
+                    }
+                    else if (textInputField.value().split(' ').length == 2 && textInputField.value().split(' ')[1] == 'dark')
+                    {
+                        document.getElementById('pagestyle').setAttribute('href', 'css/dark.css');
+                        isDarkMode = true;
+                    }
+                    else if (textInputField.value().split(' ').length == 2 && textInputField.value().split(' ')[1] == 'oled')
+                    {
+                        document.getElementById('pagestyle').setAttribute('href', 'css/oled.css');
+                        isDarkMode = true;
+                    }
+                    else
+                    {
+                        chatBox.html('\nYour options for this command are: <b>light</b>, <b>dark</b>, or <b>oled</b>.', true);
+                        chatBox.html('\n/style [STYLE (light, dark, oled)].\n ', true);
+                    }
+                    resetFields = true;
                 }
-                resetFields = true;
-            }
-            else if (tempRank != 'guest' && textInputField.value().split(' ')[0] == '/style')
-            {
-                if (textInputField.value().split(' ').length == 2 && textInputField.value().split(' ')[1] == 'light')
+                else if (tempRank != 'guest' && textInputField.value().split(' ')[0] == '/propose')
                 {
-                    document.getElementById('pagestyle').setAttribute('href', 'css/light.css');
-                    isDarkMode = false;
+                    if (textInputField.value().split(' ').length > 2 && (textInputField.value().split(' ')[1] == 'bug' || textInputField.value().split(' ')[1] == 'suggestion' || textInputField.value().split(' ')[1] == 'request'))
+                    {
+                        socket.emit('chat', textInputField.value());
+                        resetFields = true;
+                    }
+                    else
+                    {
+                        chatBox.html('\nYour options for this command are: <b>bug</b>, <b>suggestion</b>, or <b>request</b>.', true);
+                        chatBox.html('\n/propose [TYPE (bug, suggestion, request)] [MESSAGE].\n ', true);
+                    }
+                    resetFields = true;
                 }
-                else if (textInputField.value().split(' ').length == 2 && textInputField.value().split(' ')[1] == 'dark')
+                else if (textInputField.value() != '')
                 {
-                    document.getElementById('pagestyle').setAttribute('href', 'css/dark.css');
-                    isDarkMode = true;
-                }
-                else if (textInputField.value().split(' ').length == 2 && textInputField.value().split(' ')[1] == 'oled')
-                {
-                    document.getElementById('pagestyle').setAttribute('href', 'css/oled.css');
-                    isDarkMode = true;
-                }
-                else
-                {
-                    chatBox.html('\nYour options for this command are: <b>light</b>, <b>dark</b>, or <b>oled</b>.', true);
-                    chatBox.html('\n/style [STYLE (light, dark, oled)].\n ', true);
-                }
-                resetFields = true;
-            }
-            else if (tempRank != 'guest' && textInputField.value().split(' ')[0] == '/propose')
-            {
-                if (textInputField.value().split(' ').length > 2 && (textInputField.value().split(' ')[1] == 'bug' || textInputField.value().split(' ')[1] == 'suggestion'))
-                {
+                    lastLength = textInputField.value().length;
                     socket.emit('chat', textInputField.value());
                     resetFields = true;
                 }
-                else
-                {
-                    chatBox.html('\nYour options for this command are: <b>bug</b>, <b>suggestion</b>, or <b>request</b>.', true);
-                    chatBox.html('\n/propose [TYPE (bug, suggestion, request)] [MESSAGE].\n ', true);
-                }
-                resetFields = true;
             }
-            else if (textInputField.value() != '')
-            {
-                lastLength = textInputField.value().length;
-                socket.emit('chat', textInputField.value());
-                resetFields = true;
-            }
+            fullScroll();
         }
-        fullScroll();
     }
 }

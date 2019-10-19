@@ -289,6 +289,7 @@ option {
 
 friendBox {
     font-size: 18px;
+    color: #ddd;
     width: calc(100% - 16px - 240px);
     height: calc(100% - 80px - 32px - 48px - 24px - 52px);
     text-align:left;
