@@ -1319,7 +1319,7 @@ function windowResized()
         
         pictureCanvas.position(windowWidth / 2 - width / 2, windowHeight / 2 - 20 - height / 2);
 
-        pictureErrorText.position(windowWidth / 4, windowHeight - 130);
+        pictureErrorText.position(windowWidth / 4, windowHeight - 160);
     }
     else if (isFriendsOpen)
     {
