@@ -535,7 +535,7 @@ function mainFunc(socket)
 			}
 		});
 
-		socket.on('requestFriends', function(){
+		socket.on('getFriends', function(){
 			try
 			{
 				if (socket.id in chatterList && chatterList[socket.id].rank != 'guest')
@@ -604,6 +604,47 @@ function mainFunc(socket)
 					}
 
 					socket.emit('friendList', pack);
+				}
+			}
+			catch (err)
+			{
+				console.log("Request Friends failed unexpectedly.");
+			}
+		});
+
+		socket.on('friendRequest', function(data){
+			try
+			{
+				if (socket.id in chatterList && chatterList[socket.id].rank != 'guest')
+				{
+					let chatterName = chatterList[socket.id].name;
+
+					if (data in users)
+					{
+						for (let i = 0; i < users[data]['requests'].length; i++)
+						{
+							if (users[data]['requests'][i] === chatterName)
+							{
+								socket.emit('friendRequestResponse', 'User ' + getNameSpanner(users[data].rank) + data + '</span> already has a pending friend request from you.');
+								return;
+							}
+						}
+
+						users[data]['requests'].push(chatterName);
+
+						fs.writeFile('users.json', JSON.stringify(users, null, 2), function(err){
+							if (err)
+							{
+								console.error(err);
+							}
+						});
+
+						socket.emit('friendRequestResponse', 'Friend request to ' + getNameSpanner(users[data].rank) + data + '</span> was successful! Now waiting for a reply from ' + data + '!');
+					}
+					else
+					{
+						socket.emit('friendRequestResponse', 'User ' + data + ' cannot be found.');
+					}
 				}
 			}
 			catch (err)
@@ -1349,6 +1390,31 @@ function isCommandAllowed(rOwner, rAffected, steps)
 function isValidRank(rank)
 {
 	return rank == 'admin' || rank == 'mod' || rank == '++' || rank == '+' || rank == 'reg';
+}
+
+function getNameSpanner(rank) // used for rank colours
+{
+    if (rank == 'admin')
+    {
+        return '<span class="adminName">[ADMIN] ';
+    }
+    if (rank == 'mod')
+    {
+        return '<span class="modName">[MOD] ';
+    }
+    if (rank == '+')
+    {
+        return '<span class="plusName">[+] ';
+    }
+    if (rank == '++')
+    {
+        return '<span class="plusPlusName">[++] ';
+    }
+    if (rank == 'guest')
+    {
+        return '<span class="guestName">';
+    }
+    return '<span class="baseName">';
 }
 
 function getRankValue(rank)

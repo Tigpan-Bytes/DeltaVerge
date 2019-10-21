@@ -99,6 +99,7 @@ let redColorButton;
 let greenColorButton;
 let blueColorButton;
 let yellowColorButton;
+let brownColorButton;
 
 //friends
 let leaveFriendsButton;
@@ -109,6 +110,10 @@ let friendChatBox;
 
 let friendsListButton;
 let friendRequestsButton;
+
+let friendRequestInput;
+let friendRequestSend;
+let friendRequestResponse;
 
 //end
 
@@ -138,10 +143,11 @@ const pictureHeight = 170;
 
 const whiteC = [255, 255, 255, 255];
 const blackC = [0, 0, 0, 255];
-const redC = [255, 0, 0, 255];
+const redC = [250, 0, 0, 255];
 const greenC = [50, 205, 50, 255];
-const blueC = [0, 0, 255, 255];
+const blueC = [15, 15, 245, 255];
 const yellowC = [240, 210, 0, 255];
+const brownC = [158, 126, 38, 255];
 
 let pen = 2;
 let penColor = blackC;
@@ -271,6 +277,10 @@ function setup()
             slowMillis = millis() + data * 1000 * 60;
             isSlowed = true;
         }
+    });
+    socket.on('friendRequestResponse', function(data) {
+        friendRequestResponse.html(data);
+        friendRequestInput.value('');
     });
 }
 
@@ -621,6 +631,7 @@ function leaveDrawing()
     greenColorButton.remove();
     blueColorButton.remove();
     yellowColorButton.remove();
+    brownColorButton.remove();
 
     pictureErrorText.remove();
 }
@@ -675,7 +686,11 @@ function getColorCode(color)
     {
         return 4;
     }
-    return 5;
+    if (sameColor(yellowC, color))
+    {
+        return 5;
+    }
+    return 6;
 }
 
 function setColorCode(code)
@@ -700,7 +715,11 @@ function setColorCode(code)
     {
         return blueC;
     }
-    return yellowC;
+    if (code == 5)
+    {
+        return yellowC;
+    }
+    return brownC;
 }
 
 function createFriends() //pls teach me now
@@ -719,7 +738,7 @@ function createFriends() //pls teach me now
     welcomeFriend.style('color', '#ddd');
     welcomeFriend.parent(background);
 
-    friendChatBox = createElement('friendBox', '<i>&nbsp;&nbsp;&nbsp;&nbsp;Sorry buds, this is still not available, but it is being worked on!</b></i>', true); 
+    friendChatBox = createElement('friendBox', '', true); 
     friendChatBox.parent(background);
 
     friendsList = createElement('listbox', '<i>Friends List:\n</i>');
@@ -737,7 +756,23 @@ function createFriends() //pls teach me now
     friendRequestsButton.size(240 - 16, 40);
     friendRequestsButton.parent(background);
 
-    socket.emit('requestFriends');
+    friendRequestInput = createElement('input', '');
+    friendRequestInput.attribute('placeholder', 'Send a friend request...');
+    friendRequestInput.parent(friendChatBox);
+
+    friendRequestSend = createButton('Send Request');
+    friendRequestSend.size(130, 50);
+    friendRequestSend.parent(background);
+    friendRequestSend.mouseClicked(function() {
+        socket.emit('friendRequest', friendRequestInput.value().replace(/\s/g, ''));
+    });
+
+    friendRequestResponse = createElement('p', 'Send a friend request to someone, if they accept it you will be able to see if each other is online and DM each other. \n<b>STILL WIP, FRIENDS ARE BEING WORKED ON I WAS JUST BUSY OVER THE WEEKEND</b>');
+    friendRequestResponse.parent(background);
+
+    //friendChatBox.html('<i>&nbsp;&nbsp;&nbsp;&nbsp;Sorry buds, this is still not available, but it is being worked on!</b></i>', true);
+
+    socket.emit('getFriends');
 
     windowResized();
 }
@@ -775,6 +810,7 @@ function selectPenColorButton(button)
     greenColorButton.attribute('class', 'interact');
     blueColorButton.attribute('class', 'interact');
     yellowColorButton.attribute('class', 'interact');
+    brownColorButton.attribute('class', 'interact');
 
     button.attribute('class', 'selected');
 }
@@ -859,6 +895,9 @@ function createChatRoom()
             yellowColorButton = createImg('yellowColor.png');
             yellowColorButton.mouseClicked(function(){ penColor = yellowC; selectPenColorButton(yellowColorButton); });
             createDrawingButton(yellowColorButton);
+            brownColorButton = createImg('brownColor.png');
+            brownColorButton.mouseClicked(function(){ penColor = brownC; selectPenColorButton(brownColorButton); });
+            createDrawingButton(brownColorButton);
     
             pictureErrorText = createElement('errorText', '');
             pictureErrorText.size(windowWidth / 2, 100);
@@ -995,8 +1034,8 @@ function addCommandLine()
 function allowedToJoin()
 {
     let cBan = getCookie('ban') == '' ? 0 : parseInt(getCookie('ban'));
-    let lBan = window.localStorage.getItem('ban') == undefined ? 0 : window.localStorage.getItem('ban');
-    let sBan = sessionStorage.getItem('ban') == undefined ? 0 : sessionStorage.getItem('ban');
+    let lBan = (window.localStorage.getItem('ban') === null || window.localStorage.getItem('ban') === undefined) ? 0 : window.localStorage.getItem('ban');
+    let sBan = (sessionStorage.getItem('ban') === null || window.localStorage.getItem('ban') === undefined) ? 0 : sessionStorage.getItem('ban');
     return Math.max(cBan, lBan, sBan);
 }
 
@@ -1303,14 +1342,15 @@ function windowResized()
 
         sendPictureButton.position(windowWidth - 120 - 8, windowHeight - 40 - 8);
 
-        redColorButton.position(windowWidth - 120 - 8 - 48, windowHeight - 40 - 8);
-        greenColorButton.position(windowWidth - 120 - 8 - 48 - 48, windowHeight - 40 - 8);
-        blueColorButton.position(windowWidth - 120 - 8 - 48 - 48 - 48, windowHeight - 40 - 8);
-        yellowColorButton.position(windowWidth - 120 - 8 - 48 - 48 - 48 - 48, windowHeight - 40 - 8);
-        blackColorButton.position(windowWidth - 120 - 8 - 48 - 48 - 48 - 48 - 48, windowHeight - 40 - 8);
-        whiteColorButton.position(windowWidth - 120 - 8 - 48 - 48 - 48 - 48 - 48 - 48, windowHeight - 40 - 8);
+        brownColorButton.position(windowWidth - 120 - 8 - 48, windowHeight - 40 - 8);
+        redColorButton.position(windowWidth - 120 - 8 - 48 - 48, windowHeight - 40 - 8);
+        greenColorButton.position(windowWidth - 120 - 8 - 48 - 48 - 48, windowHeight - 40 - 8);
+        blueColorButton.position(windowWidth - 120 - 8 - 48 - 48 - 48 - 48, windowHeight - 40 - 8);
+        yellowColorButton.position(windowWidth - 120 - 8 - 48 - 48 - 48 - 48 - 48, windowHeight - 40 - 8);
+        blackColorButton.position(windowWidth - 120 - 8 - 48 - 48 - 48 - 48 - 48 - 48, windowHeight - 40 - 8);
+        whiteColorButton.position(windowWidth - 120 - 8 - 48 - 48 - 48 - 48 - 48 - 48 - 48, windowHeight - 40 - 8);
 
-        resetPictureButton.position(windowWidth - 120 - 8 - 48 - 48 - 48 - 48 - 48 - 48 - 128, windowHeight - 40 - 8);
+        resetPictureButton.position(windowWidth - 120 - 8 - 48 - 48 - 48 - 48 - 48 - 48 - 48 - 128, windowHeight - 40 - 8);
 
         let xMod = (windowWidth - 60) / pictureWidth;
         let yMod = (windowHeight - 90) / pictureHeight;
@@ -1325,7 +1365,7 @@ function windowResized()
     {
         leaveFriendsButton.position(windowWidth - 178, 8);
 
-        welcomeFriend.position(0,0);
+        welcomeFriend.position(0, 0);
         friendSelection.position(0, 48);
         friendChatBox.position(0, 48 + 52);
         friendsList.position(windowWidth - 240, 48);
@@ -1333,6 +1373,12 @@ function windowResized()
         friendsListButton.position(windowWidth - 232, windowHeight - 112);
 
         friendRequestsButton.position(windowWidth - 232, windowHeight - 52);
+        
+        friendRequestInput.size(friendChatBox.size().width - 130 - 24 - 16 - 4, 50);
+        friendRequestInput.position(0, 0);
+
+        friendRequestSend.position(friendChatBox.position().x + friendRequestInput.size().width + 20, friendChatBox.position().y + 12);
+        friendRequestResponse.position(friendChatBox.position().x + 12, friendChatBox.position().y + 58);
     }
 }
 

@@ -185,6 +185,14 @@ welcome {
     font-family: Arial, Helvetica, sans-serif;
 }
 
+response {
+    font-size: 16px;
+    color: #222;
+    margin: 8px 8px;
+    text-align: left;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
 typing {
     font-size: 16px;
     color: #444;
