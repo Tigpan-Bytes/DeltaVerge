@@ -115,6 +115,10 @@ let friendRequestInput;
 let friendRequestSend;
 let friendRequestResponse;
 
+let unfriendInput;
+let unfriendSend;
+let unfriendResponse;
+
 //end
 
 let resetFields = false;
@@ -207,6 +211,7 @@ function setup()
     socket.on('newChatAnnouncement', addChatAnnouncement);
     socket.on('newUserList', updateUserList);
     socket.on('friendList', updateFriendList);
+    socket.on('requestList', updateRequestList);
     socket.on('acceptedUN', acceptedLogin);
     socket.on('failedUN', failedLogin);
     socket.on('roomCounts', function(data){
@@ -281,6 +286,10 @@ function setup()
     socket.on('friendRequestResponse', function(data) {
         friendRequestResponse.html(data);
         friendRequestInput.value('');
+    });
+    socket.on('removeFriendResponse', function(data) {
+        unfriendResponse.html(data);
+        unfriendInput.value('');
     });
 }
 
@@ -747,6 +756,9 @@ function createFriends() //pls teach me now
     friendsListButton = createButton('Friends List');
     friendsListButton.size(240 - 16, 40);
     friendsListButton.parent(background);
+    friendsListButton.mouseClicked(function() {
+        socket.emit('getFriends');
+    });
 
     friendSelection = createElement('select', '');
     friendSelection.parent(background);
@@ -755,6 +767,9 @@ function createFriends() //pls teach me now
     friendRequestsButton = createButton('Friend Requests');
     friendRequestsButton.size(240 - 16, 40);
     friendRequestsButton.parent(background);
+    friendRequestsButton.mouseClicked(function() {
+        socket.emit('getRequests');
+    });
 
     friendRequestInput = createElement('input', '');
     friendRequestInput.attribute('placeholder', 'Send a friend request...');
@@ -767,8 +782,22 @@ function createFriends() //pls teach me now
         socket.emit('friendRequest', friendRequestInput.value().replace(/\s/g, ''));
     });
 
-    friendRequestResponse = createElement('p', 'Send a friend request to someone, if they accept it you will be able to see if each other is online and DM each other. \n<b>STILL WIP, FRIENDS ARE BEING WORKED ON I WAS JUST BUSY OVER THE WEEKEND</b>');
+    friendRequestResponse = createElement('p', 'Send a friend request to someone, if they accept it you will be able to see if each other is online and DM each other.');
     friendRequestResponse.parent(background);
+
+    unfriendInput = createElement('input', '');
+    unfriendInput.attribute('placeholder', 'Unfriend sombody...');
+    unfriendInput.parent(friendChatBox);
+
+    unfriendSend = createButton('Unfriend');
+    unfriendSend.size(130, 50);
+    unfriendSend.parent(background);
+    unfriendSend.mouseClicked(function() {
+        socket.emit('removeFriend', unfriendInput.value().replace(/\s/g, ''));
+    });
+
+    unfriendResponse = createElement('p', 'Remove someone from your friends list.');
+    unfriendResponse.parent(background);
 
     //friendChatBox.html('<i>&nbsp;&nbsp;&nbsp;&nbsp;Sorry buds, this is still not available, but it is being worked on!</b></i>', true);
 
@@ -920,13 +949,13 @@ function createChatRoom()
 
     typingText = createElement('typing', 'Nobody is typing at the moment...');
 
-    chatBox = createElement('chatbox', '<i>&nbsp;&nbsp;&nbsp;&nbsp;Welcome to <b>Room ' + room + '</b>! Type, then press enter to chat. Alternatively, click in the bottom right to draw a picture.\n\nVersion - <b>0.1.4</b>:</i>', true); 
-    chatBox.html("\n<i>=> Even more spam protection!</i>", true);
-    chatBox.html("\n<i>=> <b>/check</b> is now only usable by + ranked users.</i>", true);
-    chatBox.html('\n<i>=> <b>/slow</b> and <b>/unslow</b> are commands for ++ ranked users to help prevent spamming.</i>', true);
-    chatBox.html("\n<i>=> If you want a rank, contact a mod/admin or use pictochat actively and respectfully, then you may automatically receive a rank at the end of the day.</i>\n ", true);
+    chatBox = createElement('chatbox', '<i>&nbsp;&nbsp;&nbsp;&nbsp;Welcome to <b>Room ' + room + '</b>! Type, then press enter to chat. Alternatively, click in the bottom right to draw a picture.\n\nVersion - <b>0.1.5</b>:</i>', true); 
+    chatBox.html("\n<i>=> Boring security and slight hack resistance!</i>", true);
+    chatBox.html("\n<i>=> MORE COLOURS FOR DRAWING.</i>", true);
+    chatBox.html('\n<i>=> Friends! (Direct messages coming soon)</i>', true);
+    chatBox.html('\n<i>=> As soon as Direct Messages are done, then games are next.</i>\n ', true);
     
-    if (tempRank != 'guest') { chatBox.html('\n<i> Type <b>/help</b> to see what commands you can use, and how to use them.</i>\n ', true); }
+    if (tempRank != 'guest') { chatBox.html('\n<i>Type <b>/help</b> to see what commands you can use, and how to use them.</i>\n ', true); }
 
     userList = createElement('listbox', '<i>User List:\n</i>');
 
@@ -1379,6 +1408,12 @@ function windowResized()
 
         friendRequestSend.position(friendChatBox.position().x + friendRequestInput.size().width + 20, friendChatBox.position().y + 12);
         friendRequestResponse.position(friendChatBox.position().x + 12, friendChatBox.position().y + 58);
+
+        unfriendInput.size(friendChatBox.size().width - 130 - 24 - 16 - 4, 50);
+        unfriendInput.position(0, 120);
+
+        unfriendSend.position(friendChatBox.position().x + unfriendInput.size().width + 20, friendChatBox.position().y + 12 + 120);
+        unfriendResponse.position(friendChatBox.position().x + 12, friendChatBox.position().y + 58 + 120);
     }
 }
 
@@ -1409,7 +1444,7 @@ function updateFriendSelection(data)
 
     for (let i = 0; i < data.length; i++)
     {
-        friendSelection.html('<option value="' + data[i].un + '">Direct Message: ' + getNameSpanner(data[i].rank) + data[i].un + '</span></option>', true);
+        friendSelection.html('<option value="' + data[i].un + '">Direct Message: ' + getNameSpanner(data[i].rank) + data[i].un + '</span> BTW NOT WORKING YET</option>', true);
     }
 }
 
@@ -1423,6 +1458,38 @@ function updateFriendList(data)
         friendsList.html("\n\n" + (data[i].active ? "● " : "◌ ") + getNameSpanner(data[i].rank) + data[i].un + "</span>", true);
     }
     friendsList.html("\n ", true);
+}
+
+function updateRequestList(data)
+{
+    friendsList.html("<i>Pending Friend Request List:</i>");
+
+    for (let i = 0; i < data.length; i++)
+    {
+        friendsList.elt.insertAdjacentHTML('beforeend', "\n\n" + (data[i].active ? "● " : "◌ ") + getNameSpanner(data[i].rank) + data[i].un + "</span>\n\n");
+        let accept = createButton('Accept');
+        let deny = createButton('Deny');
+
+        accept.size(70, 30);
+        accept.style('font-size', '14px');
+        accept.mouseClicked(function() {
+            socket.emit('actFriendRequest', {un: data[i].un, accept: true});
+        });
+        accept.style('background-color', '#34be54');
+        accept.style('border', '2px solid #118f35');
+        friendsList.elt.appendChild(accept.elt);
+        friendsList.elt.insertAdjacentHTML('beforeend', '&nbsp;&nbsp;&nbsp;');;
+
+        deny.size(70, 30);
+        deny.style('font-size', '14px');
+        deny.mouseClicked(function() {
+            socket.emit('actFriendRequest', {un: data[i].un, accept: false});
+        });
+        deny.style('background-color', '#d23f2f');
+        deny.style('border', '2px solid #9d1611');
+        friendsList.elt.appendChild(deny.elt);
+    }
+    friendsList.elt.insertAdjacentHTML('beforeend', '\n ');;
 }
 
 function addChatMessage(data)

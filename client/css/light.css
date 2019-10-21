@@ -104,7 +104,7 @@ canvas {
 
 /* The Modal (background for drawing) */
 .modal {
-    display: block; /* Hidden by default */
+    display: block; 
     position: fixed; /* Stay in place */
     z-index: 1; /* Sit on top */
     left: 0;
@@ -117,6 +117,7 @@ canvas {
 }
 
 button {
+    display:inline;
     font-size: 18px;
     background-color: rgb(76, 130, 175);
     color: white;

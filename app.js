@@ -536,80 +536,11 @@ function mainFunc(socket)
 		});
 
 		socket.on('getFriends', function(){
-			try
-			{
-				if (socket.id in chatterList && chatterList[socket.id].rank != 'guest')
-				{
-					let pack = [];
-					let changed = false;
-					let user = users[chatterList[socket.id].name];
-					let userName = chatterList[socket.id].name;
+			updateFriendList(socket);
+		});
 
-					for (let i = 0; i < user['friends'].length; i++)
-					{
-						let friend = user['friends'][i];
-						if (!(friend in users))
-						{
-							user.friends.splice(i, 1);
-							changed = true;
-							i--;
-							continue;
-						}
-
-						let found = false;
-						for(let j = 0; j < users[friend]['friends'].length; j++) 
-						{
-							if (users[friend]['friends'][j] == userName) 
-							{
-								found = true;
-								break;
-							}
-						}
-
-						if (!found)
-						{
-							user.friends.splice(i, 1);
-							changed = true;
-							i--;
-							continue;
-						}
-						else
-						{
-							let online = false;
-							for (let j in chatterList) 
-							{
-								if (chatterList[j].name == friend)
-								{
-									online = true;
-									break;
-								}
-							}
-
-							pack.push({
-								active: online,
-								un: friend,
-								rank: users[friend]['rank'],
-							});
-						}
-					}
-
-					if (changed)
-					{
-						fs.writeFile('users.json', JSON.stringify(users, null, 2), function(err){
-							if (err)
-							{
-								console.error(err);
-							}
-						});
-					}
-
-					socket.emit('friendList', pack);
-				}
-			}
-			catch (err)
-			{
-				console.log("Request Friends failed unexpectedly.");
-			}
+		socket.on('getRequests', function() {
+			updateRequestList(socket)
 		});
 
 		socket.on('friendRequest', function(data){
@@ -617,29 +548,57 @@ function mainFunc(socket)
 			{
 				if (socket.id in chatterList && chatterList[socket.id].rank != 'guest')
 				{
+					let user = users[chatterList[socket.id].name];
 					let chatterName = chatterList[socket.id].name;
 
-					if (data in users)
+					if (chatterName === data)
 					{
-						for (let i = 0; i < users[data]['requests'].length; i++)
+						socket.emit('friendRequestResponse', 'You cannot friend yourself, stop trying to break pictochat.');
+					}
+					else if (data in users)
+					{
+						let found = false;
+						for (let i = 0; i < user.requests.length; i++) 
 						{
-							if (users[data]['requests'][i] === chatterName)
+							if (user.requests[i] == data) 
 							{
-								socket.emit('friendRequestResponse', 'User ' + getNameSpanner(users[data].rank) + data + '</span> already has a pending friend request from you.');
-								return;
+								found = true;
+								break;
 							}
 						}
 
-						users[data]['requests'].push(chatterName);
-
-						fs.writeFile('users.json', JSON.stringify(users, null, 2), function(err){
-							if (err)
+						if (found)
+						{
+							user.friends.push(data);
+							users[data].friends.push(chatterName);
+							console.log('Accepted Friend: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Username: " + chatterList[socket.id].name + " | Accepted: " + data + " | Room: " + chatterList[socket.id].room + " | Rank: " + chatterList[socket.id].rank + " | Time: " + getSuperTime(new Date()));
+							socket.emit('friendRequestResponse', 'User ' + getNameSpanner(users[data].rank) + data + '</span> had already sent you a friend request so you are now friends!');
+							
+							updateFriendList(socket);
+						}
+						else
+						{
+							for (let i = 0; i < users[data].requests.length; i++)
 							{
-								console.error(err);
+								if (users[data].requests[i] === chatterName)
+								{
+									socket.emit('friendRequestResponse', 'User ' + getNameSpanner(users[data].rank) + data + '</span> already has a pending friend request from you.');
+									return;
+								}
 							}
-						});
 
-						socket.emit('friendRequestResponse', 'Friend request to ' + getNameSpanner(users[data].rank) + data + '</span> was successful! Now waiting for a reply from ' + data + '!');
+							users[data].requests.push(chatterName);
+
+							fs.writeFile('users.json', JSON.stringify(users, null, 2), function(err){
+								if (err)
+								{
+									console.error(err);
+								}
+							});
+
+							socket.emit('friendRequestResponse', 'Friend request to ' + getNameSpanner(users[data].rank) + data + '</span> was successful! Now waiting for a reply from ' + data + '!');
+							console.log('Sent Friend: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Username: " + chatterList[socket.id].name + " | Requested: " + data + " | Room: " + chatterList[socket.id].room + " | Rank: " + chatterList[socket.id].rank + " | Time: " + getSuperTime(new Date()));
+						}
 					}
 					else
 					{
@@ -652,6 +611,99 @@ function mainFunc(socket)
 				console.log("Request Friends failed unexpectedly.");
 			}
 		});
+
+		socket.on('removeFriend', function(data){
+			try
+			{
+				if (socket.id in chatterList && chatterList[socket.id].rank != 'guest')
+				{
+					let user = users[chatterList[socket.id].name];
+
+					let found = false;
+					for (let i = 0; i < user.friends.length; i++) 
+					{
+						if (user.friends[i] == data) 
+						{
+							user.friends.splice(i, 1);
+							found = true;
+							break;
+						}
+					}
+
+					if (found)
+					{
+						fs.writeFile('users.json', JSON.stringify(users, null, 2), function(err){
+							if (err)
+							{
+								console.error(err);
+							}
+						});
+						socket.emit('removeFriendResponse', 'User ' + getNameSpanner(users[data].rank) + data + '</span> was removed from your friends list.');
+						updateFriendList(socket);
+					}
+					else
+					{
+						socket.emit('removeFriendResponse', 'User ' + data + ' cannot be found in your friends list.');
+					}
+				}
+			}
+			catch (err)
+			{
+				console.log("Remove Friends failed unexpectedly.");
+			}
+		});
+
+		socket.on('actFriendRequest', function(data){
+			try
+			{
+				if (socket.id in chatterList && chatterList[socket.id].rank != 'guest')
+				{
+					let user = users[chatterList[socket.id].name];
+					let chatterName = chatterList[socket.id].name;
+
+					let found = false;
+					for(let i = 0; i < user.requests.length; i++) 
+					{
+						if (user.requests[i] == data.un) 
+						{
+							found = true;
+							break;
+						}
+					}
+
+					if (found)
+					{
+						for (let i = 0; i < user.requests.length; i++)
+						{
+							if (user.requests[i] == data.un)
+							{
+								user.requests.splice(i, 1);
+							}
+							console.log('Deny Friend: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Username: " + chatterList[socket.id].name + " | Denied: " + data.un + " | Room: " + chatterList[socket.id].room + " | Rank: " + chatterList[socket.id].rank + " | Time: " + getSuperTime(new Date()));
+						}
+						if (data.accept)
+						{
+							user.friends.push(data.un);
+							users[data.un].friends.push(chatterName);
+							console.log('Accepted Friend: ID: ' + socket.id + " | IP: " + socket.request.connection.remoteAddress + " | Username: " + chatterList[socket.id].name + " | Accepted: " + data.un + " | Room: " + chatterList[socket.id].room + " | Rank: " + chatterList[socket.id].rank + " | Time: " + getSuperTime(new Date()));
+						}
+
+						fs.writeFile('users.json', JSON.stringify(users, null, 2), function(err){
+							if (err)
+							{
+								console.error(err);
+							}
+						});
+						
+						updateRequestList(socket);
+					}
+				}
+			}
+			catch (err)
+			{
+				console.log("Act Friend Request failed unexpectedly.");
+			}
+		});
 	}
 	catch (err)
 	{
@@ -659,6 +711,140 @@ function mainFunc(socket)
 	}
 }
 
+function updateFriendList(socket)
+{
+	try
+	{
+		if (socket.id in chatterList && chatterList[socket.id].rank != 'guest')
+		{
+			let pack = [];
+			let changed = false;
+			let user = users[chatterList[socket.id].name];
+			let userName = chatterList[socket.id].name;
+
+			for (let i = 0; i < user.friends.length; i++)
+			{
+				let friend = user.friends[i];
+				if (!(friend in users))
+				{
+					user.friends.splice(i, 1);
+					changed = true;
+					i--;
+					continue;
+				}
+
+				let found = false;
+				for (let j = 0; j < users[friend].friends.length; j++) 
+				{
+					if (users[friend].friends[j] == userName) 
+					{
+						found = true;
+						break;
+					}
+				}
+
+				if (!found)
+				{
+					user.friends.splice(i, 1);
+					changed = true;
+					i--;
+					continue;
+				}
+				else
+				{
+					let online = false;
+					for (let j in chatterList) 
+					{
+						if (chatterList[j].name == friend)
+						{
+							online = true;
+							break;
+						}
+					}
+
+					pack.push({
+						active: online,
+						un: friend,
+						rank: users[friend]['rank'],
+					});
+				}
+			}
+
+			if (changed)
+			{
+				fs.writeFile('users.json', JSON.stringify(users, null, 2), function(err){
+					if (err)
+					{
+						console.error(err);
+					}
+				});
+			}
+
+			socket.emit('friendList', pack);
+		}
+	}
+	catch (err)
+	{
+		console.log("Get Friends failed unexpectedly.");
+	}
+}
+
+function updateRequestList(socket)
+{
+	try
+	{
+		if (socket.id in chatterList && chatterList[socket.id].rank != 'guest')
+		{
+			let pack = [];
+			let changed = false;
+			let user = users[chatterList[socket.id].name];
+
+			for (let i = 0; i < user.requests.length; i++)
+			{
+				let request = user.requests[i];
+				if (!(request in users))
+				{
+					user.requests.splice(i, 1);
+					changed = true;
+					i--;
+					continue;
+				}
+
+				let online = false;
+				for (let j in chatterList) 
+				{
+					if (chatterList[j].name == request)
+					{
+						online = true;
+						break;
+					}
+				}
+
+				pack.push({
+					active: online,
+					un: request,
+					rank: users[request]['rank'],
+				});
+			}
+
+			if (changed)
+			{
+				fs.writeFile('users.json', JSON.stringify(users, null, 2), function(err){
+					if (err)
+					{
+						console.error(err);
+					}
+				});
+			}
+
+			socket.emit('requestList', pack);
+		}
+	}
+	catch (err)
+	{
+		console.log("Get Requests failed unexpectedly.");
+	}
+}
 
 function command(socket, message)
 {
@@ -1138,7 +1324,6 @@ function command(socket, message)
 	catch (err)
 	{
 		console.log("Command failed unexpectedly.");
-		console.log(err);
 	}
 	return false;
 }

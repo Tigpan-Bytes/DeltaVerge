@@ -117,6 +117,7 @@ canvas{
 }
 
 button {
+    display:inline;
     font-size: 18px;
     background-color: rgb(76, 130, 175);
     color: white;

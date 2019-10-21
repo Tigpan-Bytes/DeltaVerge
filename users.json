@@ -39,12 +39,6 @@
     "friends": [],
     "requests": []
   },
-  "TestRankUp": {
-    "hash": "$2b$12$iasRKwG0AGxfAoDEwRuFUuDDVO5j0.qmUCod91hX26hbP.a4P/g4O",
-    "rank": "+",
-    "friends": [],
-    "requests": []
-  },
   "Notjackson": {
     "hash": "$2b$12$YjVvp.UU2yF69dmCWi4cLu2Gac2/0QbWGW/KjzfwxJ6fkQM9CFIIG",
     "rank": "reg",
@@ -200,7 +194,9 @@
   "Anu": {
     "hash": "$2b$12$8llnw4sNnAzxKexcR1rTiOqK89vzwmwE7DIK8uGDCrtNXrAA2IgWO",
     "rank": "mod",
-    "friends": [],
+    "friends": [
+      "Tigpan"
+    ],
     "requests": []
   },
   "new": {
