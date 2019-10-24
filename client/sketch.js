@@ -949,11 +949,12 @@ function createChatRoom()
 
     typingText = createElement('typing', 'Nobody is typing at the moment...');
 
-    chatBox = createElement('chatbox', '<i>&nbsp;&nbsp;&nbsp;&nbsp;Welcome to <b>Room ' + room + '</b>! Type, then press enter to chat. Alternatively, click in the bottom right to draw a picture.\n\nVersion - <b>0.1.5</b>:</i>', true); 
+    chatBox = createElement('chatbox', '<i>&nbsp;&nbsp;&nbsp;&nbsp;Welcome to <b>Room ' + room + '</b>! Type, then press enter to chat. Alternatively, click in the bottom right to draw a picture.\n\nVersion - <b>0.1.5a</b>:</i>', true); 
     chatBox.html("\n<i>=> Boring security and slight hack resistance!</i>", true);
     chatBox.html("\n<i>=> MORE COLOURS FOR DRAWING.</i>", true);
     chatBox.html('\n<i>=> Friends! (Direct messages coming soon)</i>', true);
-    chatBox.html('\n<i>=> As soon as Direct Messages are done, then games are next.</i>\n ', true);
+    chatBox.html('\n<i>=> a: Fixed a bug where new accounts can not have friends.</i>', true);
+    chatBox.html('\n<i>=> a: Next thing to come will be <b>multiplayer poker</b>, (thanks to nootnoot for the suggestion)!</i>\n ', true);
     
     if (tempRank != 'guest') { chatBox.html('\n<i>Type <b>/help</b> to see what commands you can use, and how to use them.</i>\n ', true); }
 

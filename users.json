@@ -126,7 +126,7 @@
   },
   "nootnoot": {
     "hash": "$2b$12$T5afiRj.hUDPKl6OO5NTAues6/.PJWzUOcYGHM5xvJyP6VjS2kpsK",
-    "rank": "+",
+    "rank": "++",
     "friends": [],
     "requests": [
       "Gamer",
@@ -260,21 +260,25 @@
   "snake": {
     "hash": "$2b$12$lxc9OEqWxz28k04gZIM7SOhZfXQsuOBwEYNZTlHSxWKBVS6OHJ8F6",
     "rank": "reg",
-    "friends": []
+    "friends": [],
+    "requests": []
   },
   "nootnootsshame": {
     "hash": "$2b$12$oGCFir.jZrz9.m/dEFH4qOEtOY9Nmgqz2RBurwk9OOIaEZ/k.ku8y",
     "rank": "reg",
-    "friends": []
+    "friends": [],
+    "requests": []
   },
   "muddy12": {
     "hash": "$2b$12$x9rO8TzEDsblvEANL/cznO9EYQ2rVB/p.qHAWwENFRAkYokOiQI7q",
     "rank": "reg",
-    "friends": []
+    "friends": [],
+    "requests": []
   },
   "bigboi1234": {
     "hash": "$2b$12$7SgKSfYdXTrBo498PeJ/o.XlQhxG/ggqmMnHk6w59MQZKIURU4oF6",
     "rank": "reg",
-    "friends": []
+    "friends": [],
+    "requests": []
   }
 }

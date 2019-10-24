@@ -202,7 +202,8 @@ function mainFunc(socket)
 									users[data.un] = {
 										hash: hash, 
 										rank: 'reg',
-										friends: []
+										friends: [],
+										requests: []
 									};
 									fs.writeFile('users.json', JSON.stringify(users, null, 2), function(err){
 										if (err)
